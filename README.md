@@ -105,7 +105,7 @@ Steps for regenerating are as follows:
 
 2. Run the following command to regenerate the contract bindings:
 
-./build/bin/abigen  --sol shyft-cli/web3/validSignersDeploy/ValidSigners.sol  --pkg shyft_contracts --out generated_bindings/whisper_signer_binding.go
+./build/bin/abigen  --sol ./shyft-config/shyft-cli/web3/validSignersDeploy/ValidSigners.sol  --pkg shyft_contracts --out generated_bindings/whisper_signer_binding.go
 
 ```
 
@@ -172,7 +172,7 @@ ie. for shyftBlockExplorerApi:
 
 The Postgresql Database Container will persist the database data to the directory ``./pg-data`` _. So if you do want to reinitialize the database you should delete this directory as well as the blockchain data directories ``(./shyftData ./privatenet)`` prior to launching the docker containers. There is a shell script available to delete these folders to run it execute the following command:
 
-**``./shyft-cli/resetShyftGeth``**
+**``./shyft-config/shyft-cli/resetShyftGeth``**
 
 Blockchain data is persisted to **``./ethash/.ethash and ./shyftData__``**. If you would like to reset the test blockchain you will need to delete the **``__./ethash ./shyftData & ./privatenet__``** directories.
 
