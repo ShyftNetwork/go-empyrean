@@ -16,5 +16,7 @@ WORKDIR /go-empyrean/
 COPY --from=build-env /bin/geth /bin/
 COPY --from=build-env /bin/bootnode /bin/
 
+COPY ./wait-for.sh ./
+
 EXPOSE 8545 8546 31333 31333/udp 8081
 CMD ["geth"]
