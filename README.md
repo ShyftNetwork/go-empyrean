@@ -105,7 +105,7 @@ Steps for regenerating are as follows:
 
 2. Run the following command to regenerate the contract bindings:
 
-./build/bin/abigen  --sol shyft-cli/web3/validSignersDeploy/ValidSigners.sol  --pkg shyft_contracts --out generated_bindings/whisper_signer_binding.go
+./build/bin/abigen  --sol ./shyft-config/shyft-cli/web3/validSignersDeploy/ValidSigners.sol  --pkg shyft_contracts --out generated_bindings/whisper_signer_binding.go
 
 ```
 
@@ -172,7 +172,7 @@ ie. for shyftBlockExplorerApi:
 
 The Postgresql Database Container will persist the database data to the directory ``./pg-data`` _. So if you do want to reinitialize the database you should delete this directory as well as the blockchain data directories ``(./shyftData ./privatenet)`` prior to launching the docker containers. There is a shell script available to delete these folders to run it execute the following command:
 
-**``./shyft-cli/resetShyftGeth``**
+**``./shyft-config/shyft-cli/resetShyftGeth``**
 
 Blockchain data is persisted to **``./ethash/.ethash and ./shyftData__``**. If you would like to reset the test blockchain you will need to delete the **``__./ethash ./shyftData & ./privatenet__``** directories.
 
@@ -533,7 +533,7 @@ limit blocks converge to (`--targetgaslimit`) and the price transactions are acc
 
 #### CLI
 
-Run `./shyft-geth` with one of the following flags:
+Run `./shyft-config/shyft-geth` with one of the following flags:
 
 - `--setup` - Setups postgres and the shyft chain db.
 - `--start` - Starts geth.
@@ -603,26 +603,18 @@ _TODO_
 
 ## Contribution
 
-Thank you for considering to help out with the source code! We welcome contributions from
-anyone on the internet, and are grateful for even the smallest of fixes!
+If you'd like to contribute to go-empyrean, please fork, fix, commit and send a pull request against the `development` branch.
 
-If you'd like to contribute to go-ethereum, please fork, fix, commit and send a pull request
-for the maintainers to review and merge into the main code base. If you wish to submit more
-complex changes though, please check up with the core devs first on [our gitter channel](https://gitter.im/ShyftNetwork/go-empyrean)
-to ensure those changes are in line with the general philosophy of the project and/or get some
-early feedback which can make both your efforts much lighter as well as our review and merge
-procedures quick and simple.
+We have a list of issues available on github.
+
+For general communication, we communicate on [our gitter channel](https://gitter.im/ShyftNetwork/go-empyrean).
 
 Please make sure your contributions adhere to our coding guidelines:
 
 - Code must adhere to the official Go [formatting](https://golang.org/doc/effective_go.html#formatting) guidelines (i.e. uses [gofmt](https://golang.org/cmd/gofmt/)).
 - Code must be documented adhering to the official Go [commentary](https://golang.org/doc/effective_go.html#commentary) guidelines.
-- Pull requests need to be based on and opened against the `master` branch.
-- Commit messages should be prefixed with the package(s) they modify.
-  - E.g. "eth, rpc: make trace configs optional"
+- Pull requests need to be based on and opened against the `development` branch.
 
-Please see the [Developers' Guide](https://github.com/empyrean/go-ethereum/wiki/Developers'-Guide)
-for more details on configuring your environment, managing project dependencies and testing procedures.
 
 ## License
 
