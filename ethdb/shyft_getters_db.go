@@ -9,7 +9,7 @@ import (
 	"github.com/ShyftNetwork/go-empyrean/core/sTypes"
 )
 
-func SGetAllBlocks() (string, error) {
+func SGetAllBlocksWithoutLimit() (string, error) {
 	db, err := ReturnShyftDatabase()
 	if err != nil {
 		fmt.Println("err")
@@ -17,9 +17,79 @@ func SGetAllBlocks() (string, error) {
 	}
 	var arr stypes.BlockRes
 	var blockArr string
+
 	rows, err := db.db.Queryx(`SELECT * FROM blocks ORDER BY number ASC`)
 	if err != nil {
+		fmt.Println("err", err)
+		return "", err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var hash, coinbase, parentHash, uncleHash, difficulty, size, rewards, num string
+		var gasUsed, gasLimit, nonce uint64
+		var txCount, uncleCount int
+		var age time.Time
+
+		err = rows.Scan(
+			&hash, &coinbase, &gasUsed, &gasLimit, &txCount, &uncleCount, &age, &parentHash, &uncleHash, &difficulty, &size, &nonce, &rewards, &num)
+
+		arr.Blocks = append(arr.Blocks, stypes.SBlock{
+			Hash:       hash,
+			Coinbase:   coinbase,
+			GasUsed:    gasUsed,
+			GasLimit:   gasLimit,
+			TxCount:    txCount,
+			UncleCount: uncleCount,
+			Age:        age,
+			ParentHash: parentHash,
+			UncleHash:  uncleHash,
+			Difficulty: difficulty,
+			Size:       size,
+			Nonce:      nonce,
+			Rewards:    rewards,
+			Number:     num,
+		})
+
+		blocks, _ := json.Marshal(arr.Blocks)
+		blocksFmt := string(blocks)
+		blockArr = blocksFmt
+	}
+	return blockArr, nil
+}
+
+// GetAllBlocksLength returns number of records in blocks table
+// This tells the client-UI how many pages to show for pagination
+func GetAllBlocksLength() (int, error) {
+	db, err := ReturnShyftDatabase()
+	if err != nil {
 		fmt.Println("err")
+		return 0, err
+	}
+	sqlStatement := `SELECT COUNT(*) FROM blocks`
+	tx, _ := db.db.Begin()
+	row := db.db.QueryRow(sqlStatement)
+	tx.Commit()
+
+	var count int
+	row.Scan(
+		&count)
+
+	return count, nil
+}
+
+func SGetAllBlocks(limit string, offset string) (string, error) {
+	db, err := ReturnShyftDatabase()
+	if err != nil {
+		fmt.Println("err")
+		return "", err
+	}
+	var arr stypes.BlockRes
+	var blockArr string
+	sqlStatement := `SELECT * FROM blocks ORDER BY number ASC LIMIT $1 OFFSET $2`
+	rows, err := db.db.Queryx(sqlStatement, limit, offset)
+	if err != nil {
+		fmt.Println("err", err)
 		return "", err
 	}
 	defer rows.Close()

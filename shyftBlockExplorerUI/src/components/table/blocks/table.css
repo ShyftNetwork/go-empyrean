@@ -8,6 +8,10 @@
     table-layout:fixed;
 }
 
+#pages {
+    margin: 25px;
+}
+
 th {
     background-color: white;
     padding: 15pt 30pt ;

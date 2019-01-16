@@ -248,7 +248,7 @@ class App extends Component {
                         }
                     />
 
-                    <Route path="/blocks" exact render={({match}) =>
+                    <Route path="/blocks" exact render={({ match }) =>
                         <div>                        
                             <BlocksRow
                                 getBlocksMined={this.getBlocksMined}

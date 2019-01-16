@@ -148,8 +148,35 @@ func GetBlock(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetAllBlocks response
+func GetAllBlocksWithoutLimit(w http.ResponseWriter, r *http.Request) {
+	blocks, err := ethdb.SGetAllBlocksWithoutLimit()
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintln(w, blocks)
+}
+
+// Count all rows in Blocks Table
+func GetAllBlocksLength(w http.ResponseWriter, r *http.Request) {
+	count, err := ethdb.GetAllBlocksLength()
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintln(w, count)
+}
+
 func GetAllBlocks(w http.ResponseWriter, r *http.Request) {
-	blocks, err := ethdb.SGetAllBlocks()
+	vars := mux.Vars(r)
+	limit := vars["limit"]
+	offset := vars["offset"]
+
+	blocks, err := ethdb.SGetAllBlocks(limit, offset)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return

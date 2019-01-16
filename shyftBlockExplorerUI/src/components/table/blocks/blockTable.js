@@ -1,7 +1,6 @@
 import React from 'react';
 import classes from './table.css';
 import { Link } from 'react-router-dom'
-
 const BlockTable = (props) => {
     return (
         <tbody>

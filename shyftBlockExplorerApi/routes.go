@@ -34,10 +34,22 @@ var routes = Routes{
 		GetAllAccounts,
 	},
 	Route{
+		"GetAllBlocksWithoutLimit",
+		"GET",
+		"/api/get_all_blocks_nolimit",
+		GetAllBlocksWithoutLimit,
+	},
+	Route{
 		"GetAllBlocks",
 		"GET",
-		"/api/get_all_blocks",
+		"/api/get_all_blocks/{limit}/{offset}",
 		GetAllBlocks,
+	},
+	Route{
+		"GetAllBlocksLength",
+		"GET",
+		"/api/get_all_blocks_length",
+		GetAllBlocksLength,
 	},
 	Route{
 		"GetBlock",

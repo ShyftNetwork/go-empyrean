@@ -1,8 +1,10 @@
 import React, { Component } from 'react';
 import BlockTable from './blockTable';
+import ErrorMessage from './errorMessage';
+import Pagination from '../pagination/pagination';
 import classes from './table.css';
 import axios from "axios/index";
-import ErrorMessage from './errorMessage';
+
 import {API_URL} from "../../../constants/apiURL";
 
 class BlocksTable extends Component {
@@ -15,18 +17,44 @@ class BlocksTable extends Component {
     }
 
     async componentDidMount() {
+        let pageLimit= 25;
+        let offset = 0;
         try {
-            const response = await axios.get(`${API_URL}/get_all_blocks/`);
+            const response = await axios.get(`${API_URL}/get_all_blocks_length`);
+            await this.setState({totalRecords: response.data});
+            try {
+                const response = await axios.get(`${API_URL}/get_all_blocks/${pageLimit}/${offset}`);
+                if(response.data === "\n") {
+                    this.setState({emptyDataSet: true})
+                } else {
+                    this.setState({emptyDataSet: false})
+                }
+                await this.setState({data: response.data});
+            } catch (err) {
+                console.log(err);
+            }
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    onPageChanged = async(data) => {
+        const { currentPage, totalPages, pageLimit } = data;
+
+        const offset = (currentPage - 1) * pageLimit;
+
+        try {
+            const response = await axios.get(`${API_URL}/get_all_blocks/${pageLimit}/${offset}`);
             if(response.data === "\n") {
-                this.setState({emptyDataSet: true})                                   
+                this.setState({emptyDataSet: true})
             } else {
-                this.setState({emptyDataSet: false})                  
+                this.setState({emptyDataSet: false})
             }
             await this.setState({data: response.data});
         } catch (err) {
             console.log(err);
         }
-    }
+    };
 
     render() {
         let table;
@@ -39,7 +67,7 @@ class BlocksTable extends Component {
                     Hash={data.Hash}
                     Number={data.Number}
                     Coinbase={data.Coinbase}
-                    AgeGet={data.AgeGet}
+                    AgeGet={data.Age}
                     GasUsed={data.GasUsed}
                     GasLimit={data.GasLimit}
                     UncleCount={data.UncleCount}
@@ -53,29 +81,32 @@ class BlocksTable extends Component {
 
         let combinedClasses = ['responsive-table', classes.table];
         return (
-            <div>     
+            <div>
                 {
-                     this.state.emptyDataSet === false && this.state.data.length > 0  ?  
-                        <table className={combinedClasses.join(' ')}>
-                            <thead>
-                                <tr>
-                                    <th scope="col" className={classes.thItem}> Height </th>
-                                    <th scope="col" className={classes.thItem}> Block Hash </th>
-                                    <th scope="col" className={classes.thItem}> Age </th>
-                                    <th scope="col" className={classes.thItem}> Txn </th>
-                                    <th scope="col" className={classes.thItem}> Uncles </th>
-                                    <th scope="col" className={classes.thItem}> Coinbase </th>
-                                    <th scope="col" className={classes.thItem}> GasUsed </th>
-                                    <th scope="col" className={classes.thItem}> GasLimit </th>
-                                    <th scope="col" className={classes.thItem}> Avg.GasPrice </th>
-                                    <th scope="col" className={classes.thItem}> Reward </th>
-                                </tr>
-                            </thead>
-                            {table}
-                        </table>
+                     this.state.emptyDataSet === false && this.state.data.length > 0  ?
+                            <table className={combinedClasses.join(' ')}>
+                                <thead>
+                                    <tr>
+                                        <th scope="col" className={classes.thItem}> Height </th>
+                                        <th scope="col" className={classes.thItem}> Block Hash </th>
+                                        <th scope="col" className={classes.thItem}> Age </th>
+                                        <th scope="col" className={classes.thItem}> Txn </th>
+                                        <th scope="col" className={classes.thItem}> Uncles </th>
+                                        <th scope="col" className={classes.thItem}> Coinbase </th>
+                                        <th scope="col" className={classes.thItem}> GasUsed </th>
+                                        <th scope="col" className={classes.thItem}> GasLimit </th>
+                                        <th scope="col" className={classes.thItem}> Avg.GasPrice </th>
+                                        <th scope="col" className={classes.thItem}> Reward </th>
+                                    </tr>
+                                </thead>
+                                {table}
+                                <div id={classes.pages}>
+                                    <Pagination totalRecords={this.state.totalRecords} pageLimit={25} pageNeighbours={1} onPageChanged={this.onPageChanged} />
+                                </div>
+                            </table>
                     : <ErrorMessage />
-                } 
-            </div>           
+                }
+            </div>
         );
     }
 }
