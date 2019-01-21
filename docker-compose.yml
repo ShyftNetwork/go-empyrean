@@ -16,20 +16,21 @@ services:
       - "31333:31333/udp"
       - "8081:8081"
     volumes:
-      - .:/go/src/ShyftNetwork/go-empyrean
-    working_dir: /go/src/ShyftNetwork/go-empyrean
+      - ./shyftData/:/go-empyrean/shyftData/
+      - ./shyft-config/:/go-empyrean/shyft-config/
+    working_dir: /go-empyrean
     depends_on: 
       - pg
     networks:
       - shyftnet
     command: >
-      sh -c 'cd /go/src/ShyftNetwork/go-empyrean &&
-            ./wait-for.sh pg:5432 &&
+      sh -c 'cd /go-empyrean &&
+            ./shyft-config/wait-for.sh pg:5432 &&
             DBENV=docker export DBENV &&
-            ./shyft-cli/initShyftGeth.sh &&
-            ./shyft-cli/startShyftGeth.sh'
+            ./shyft-config/shyft-cli/initShyftGeth.sh &&
+            ./shyft-config/shyft-cli/startShyftGeth.sh'
   pg:
-    build: 
+    build:
       context: $PWD
       dockerfile: docker/development/pg/Dockerfile
     volumes:

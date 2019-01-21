@@ -12,14 +12,9 @@ RUN \
 
 FROM alpine:3.8
 RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
-WORKDIR /go/src/ShyftNetwork/go-empyrean/
+WORKDIR /go-empyrean/
 COPY --from=build-env /bin/geth /bin/
 COPY --from=build-env /bin/bootnode /bin/
 
-COPY ./config.toml ./
-COPY ./ShyftNetwork.json ./
-COPY ./wait-for.sh ./
-COPY ./shyft-cli/initShyftGeth.sh ./shyft-cli/
-
 EXPOSE 8545 8546 31333 31333/udp 8081
-CMD ["./shyft-cli/initShyftGeth.sh", "geth --config config.toml"]
+CMD ["geth"]

@@ -27,10 +27,10 @@ import (
 	"github.com/ShyftNetwork/go-empyrean/common"
 	"github.com/ShyftNetwork/go-empyrean/common/mclock"
 	"github.com/ShyftNetwork/go-empyrean/crypto"
-	"github.com/ShyftNetwork/go-empyrean/crypto/sha3"
 	"github.com/ShyftNetwork/go-empyrean/log"
 	"github.com/ShyftNetwork/go-empyrean/p2p/netutil"
 	"github.com/ShyftNetwork/go-empyrean/rlp"
+	"golang.org/x/crypto/sha3"
 )
 
 var (
@@ -800,7 +800,7 @@ func (n *nodeNetGuts) startNextQuery(net *Network) {
 func (q *findnodeQuery) start(net *Network) bool {
 	// Satisfy queries against the local node directly.
 	if q.remote == net.tab.self {
-		closest := net.tab.closest(crypto.Keccak256Hash(q.target[:]), bucketSize)
+		closest := net.tab.closest(q.target, bucketSize)
 		q.reply <- closest.entries
 		return true
 	}
@@ -1234,7 +1234,7 @@ func (net *Network) checkTopicRegister(data *topicRegister) (*pong, error) {
 }
 
 func rlpHash(x interface{}) (h common.Hash) {
-	hw := sha3.NewKeccak256()
+	hw := sha3.NewLegacyKeccak256()
 	rlp.Encode(hw, x)
 	hw.Sum(h[:0])
 	return h

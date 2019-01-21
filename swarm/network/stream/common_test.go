@@ -35,7 +35,6 @@ import (
 	p2ptest "github.com/ShyftNetwork/go-empyrean/p2p/testing"
 	"github.com/ShyftNetwork/go-empyrean/swarm/network"
 	"github.com/ShyftNetwork/go-empyrean/swarm/network/simulation"
-	"github.com/ShyftNetwork/go-empyrean/swarm/pot"
 	"github.com/ShyftNetwork/go-empyrean/swarm/state"
 	"github.com/ShyftNetwork/go-empyrean/swarm/storage"
 	"github.com/ShyftNetwork/go-empyrean/swarm/testutil"
@@ -57,7 +56,7 @@ var (
 	bucketKeyRegistry  = simulation.BucketKey("registry")
 
 	chunkSize = 4096
-	pof       = pot.DefaultPof(256)
+	pof       = network.Pof
 )
 
 func init() {

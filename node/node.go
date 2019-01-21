@@ -21,6 +21,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/ShyftNetwork/go-empyrean"
+
 	"github.com/ShyftNetwork/go-empyrean/generated_bindings"
 
 	"github.com/ShyftNetwork/go-empyrean/accounts/abi/bind"
@@ -38,7 +40,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ShyftNetwork/go-empyrean"
 	"github.com/ShyftNetwork/go-empyrean/accounts"
 	"github.com/ShyftNetwork/go-empyrean/common/hexutil"
 	"github.com/ShyftNetwork/go-empyrean/ethdb"
@@ -272,22 +273,7 @@ func (n *Node) Start() error {
 				log.Error("subscription error:", err)
 			}
 			log.Info("listening for messages", "topicString", topicString)
-			conn := n.dialIPC()
-			authMethodContract := n.smartContractAvailable(n.config.WhisperSignersContract, conn)
-			fmt.Printf("Contract Available %+v \n", authMethodContract)
-			if authMethodContract {
-				go whisperMessageReceiver(sub, messages, n.config.WhisperChannel, n.CheckContractAdminStatusWrapper(conn)) // call contract code
-			} else {
-				// Until Testnet deployment and for testing purposes the endpoint
-				// scan be tested by passing in public signing keys as a cmd line flag
-				go whisperMessageReceiver(sub, messages, n.config.WhisperChannel, func(addr common.Address) bool {
-					if pos(n.config.WhisperKeys, addr) == -1 {
-						return false
-					} else {
-						return true
-					}
-				})
-			}
+			go n.whisperMessageReceiver(sub, messages)
 		}
 	}
 	return nil
@@ -301,9 +287,11 @@ func (n *Node) dialIPC() *ethclient.Client {
 	return conn
 }
 
-func (n *Node) CheckContractAdminStatusWrapper(conn *ethclient.Client) func(address common.Address) bool {
-	return func(addr common.Address) bool {
-		return n.CheckContractAdminStatus(addr, conn)
+func (n *Node) CheckWhisperPublicFlagKeys(addr common.Address) bool {
+	if pos(n.config.WhisperKeys, addr) == -1 {
+		return false
+	} else {
+		return true
 	}
 }
 
@@ -325,19 +313,6 @@ func (n *Node) CheckContractAdminStatus(addr common.Address, conn bind.ContractC
 		log.Info("No response from contract %+v \n", err)
 	}
 	return result
-}
-
-func (n *Node) smartContractAvailable(addr string, conn *ethclient.Client) bool {
-	address := common.HexToAddress(addr)
-	bytecode, err := conn.CodeAt(context.Background(), address, nil) // nil is latest block
-	if err != nil {
-		return false
-	}
-	if len(bytecode) > 0 {
-		fmt.Println("is contract ") // is contract
-		return true
-	}
-	return false
 }
 
 func (n *Node) getKeysFromContract() []string {
@@ -375,7 +350,9 @@ func SignHash(data []byte) ([]byte, string) {
 	return crypto.Keccak256([]byte(msg)), msg
 }
 
-func whisperMessageReceiver(sub ethereum.Subscription, messages chan *whisperv6.Message, whispChan chan string, whisperKeys func(addr common.Address) bool) {
+func (n *Node) whisperMessageReceiver(sub ethereum.Subscription, messages chan *whisperv6.Message) {
+	//conn := n.dialIPC()
+	fmt.Println("Started Message Receiver")
 	for {
 		select {
 		case err := <-sub.Err():
@@ -396,9 +373,21 @@ func whisperMessageReceiver(sub ethereum.Subscription, messages chan *whisperv6.
 				log.Error("SigToPub err", "err", err)
 			} else {
 				recoveredAddr := crypto.PubkeyToAddress(*pubKey)
-				boole := whisperKeys(recoveredAddr)
-				if boole {
-					whispChan <- blockHash
+				//authMethodContract := n.smartContractAvailable(n.config.WhisperSignersContract, conn)
+				var authorized bool
+				if n.config.WhisperSignersContract != "" {
+					fmt.Println("Starting smart contract check")
+					conn := n.dialIPC()
+					authorized = n.CheckContractAdminStatus(recoveredAddr, conn)
+				} else {
+					fmt.Println("Starting whisper keys")
+					if len(n.config.WhisperKeys) > 0 {
+						authorized = n.CheckWhisperPublicFlagKeys(recoveredAddr)
+					}
+				}
+
+				if authorized {
+					n.config.WhisperChannel <- blockHash
 				}
 			}
 		}
