@@ -58,8 +58,6 @@ type Network struct {
 	Conns   []*Conn `json:"conns"`
 	connMap map[string]int
 
-	pivotNodeID enode.ID
-
 	nodeAdapter adapters.NodeAdapter
 	events      event.Feed
 	lock        sync.RWMutex
@@ -518,7 +516,7 @@ func (net *Network) getConn(oneID, otherID enode.ID) *Conn {
 	return net.Conns[i]
 }
 
-// InitConn(one, other) retrieves the connectiton model for the connection between
+// InitConn(one, other) retrieves the connection model for the connection between
 // peers one and other, or creates a new one if it does not exist
 // the order of nodes does not matter, i.e., Conn(i,j) == Conn(j, i)
 // it checks if the connection is already up, and if the nodes are running
@@ -564,8 +562,8 @@ func (net *Network) Shutdown() {
 	close(net.quitc)
 }
 
-//Reset resets all network properties:
-//emtpies the nodes and the connection list
+// Reset resets all network properties:
+// empties the nodes and the connection list
 func (net *Network) Reset() {
 	net.lock.Lock()
 	defer net.lock.Unlock()
