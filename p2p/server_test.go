@@ -26,10 +26,10 @@ import (
 	"time"
 
 	"github.com/ShyftNetwork/go-empyrean/crypto"
-	"github.com/ShyftNetwork/go-empyrean/crypto/sha3"
 	"github.com/ShyftNetwork/go-empyrean/log"
 	"github.com/ShyftNetwork/go-empyrean/p2p/enode"
 	"github.com/ShyftNetwork/go-empyrean/p2p/enr"
+	"golang.org/x/crypto/sha3"
 )
 
 // func init() {
@@ -48,8 +48,8 @@ func newTestTransport(rpub *ecdsa.PublicKey, fd net.Conn) transport {
 	wrapped.rw = newRLPXFrameRW(fd, secrets{
 		MAC:        zero16,
 		AES:        zero16,
-		IngressMAC: sha3.NewKeccak256(),
-		EgressMAC:  sha3.NewKeccak256(),
+		IngressMAC: sha3.NewLegacyKeccak256(),
+		EgressMAC:  sha3.NewLegacyKeccak256(),
 	})
 	return &testTransport{rpub: rpub, rlpx: wrapped}
 }

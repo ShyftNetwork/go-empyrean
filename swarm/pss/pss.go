@@ -29,7 +29,6 @@ import (
 
 	"github.com/ShyftNetwork/go-empyrean/common"
 	"github.com/ShyftNetwork/go-empyrean/crypto"
-	"github.com/ShyftNetwork/go-empyrean/crypto/sha3"
 	"github.com/ShyftNetwork/go-empyrean/metrics"
 	"github.com/ShyftNetwork/go-empyrean/p2p"
 	"github.com/ShyftNetwork/go-empyrean/p2p/enode"
@@ -40,6 +39,7 @@ import (
 	"github.com/ShyftNetwork/go-empyrean/swarm/pot"
 	"github.com/ShyftNetwork/go-empyrean/swarm/storage"
 	whisper "github.com/ShyftNetwork/go-empyrean/whisper/whisperv5"
+	"golang.org/x/crypto/sha3"
 )
 
 const (
@@ -187,7 +187,7 @@ func NewPss(k *network.Kademlia, params *PssParams) (*Pss, error) {
 
 		hashPool: sync.Pool{
 			New: func() interface{} {
-				return sha3.NewKeccak256()
+				return sha3.NewLegacyKeccak256()
 			},
 		},
 	}
@@ -964,7 +964,7 @@ func (p *Pss) forward(msg *PssMsg) error {
 		onlySendOnce = true
 	}
 
-	p.Kademlia.EachConn(to, addressLength*8, func(sp *network.Peer, po int, _ bool) bool {
+	p.Kademlia.EachConn(to, addressLength*8, func(sp *network.Peer, po int) bool {
 		if po < broadcastThreshold && sent > 0 {
 			return false // stop iterating
 		}
