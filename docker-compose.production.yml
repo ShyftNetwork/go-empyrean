@@ -38,37 +38,24 @@ services:
       - POSTGRES_PASSWORD=docker
       - POSTGRES_DB=postgres
   shyft_block_api:
-    build:
-      context: $PWD 
-      dockerfile: docker/production/shyftApi/Dockerfile
-    # volumes:
-    #   - ./shyftBlockExplorerApi:/go/src/github.com/ShyftNetwork/go-empyrean/shyftBlockExplorerApi
-    working_dir: /go/src/github.com/ShyftNetwork/go-empyrean/shyftBlockExplorerApi
+    image: shyftnetwork/blockexplorer_api:latest
     ports:
-      - "8080:8080"
+    - "8080:8080"
     depends_on:
-      - pg
+    - pg
     networks:
-      - shyftnet
-    command: >
-      sh -c '
-            pwd && govendor remove github.com/ShyftNetwork/go-empyrean/crypto/secp256k1/^ && 
-            govendor fetch github.com/ShyftNetwork/go-empyrean/crypto/secp256k1/^  && 
-            /wait-for.sh pg:5432 &&
-            DBENV=docker export DBENV &&
-            go run -v *.go'
+    - shyftnet
+    environment:
+    - DBENV=docker
+    command: ./blockx_api
   shyft_block_ui:
-    build:
-      context: $PWD 
-      dockerfile: docker/production/shyftUi/Dockerfile
-      # volumes:
-      #   - ./shyftBlockExplorerApi:/go/src/github.com/ShyftNetwork/go-empyrean/shyftBlockExplorerApi
+    image: shyftnetwork/blockexplorer_ui:latest
     ports:
-      - "3000:3000"
+    - "80:3000"
     depends_on:
-      - shyft_block_api
+    - shyft_block_api
     networks:
-      - shyftnet
+    - shyftnet
 networks:
   shyftnet:
     driver: bridge
