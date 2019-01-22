@@ -294,6 +294,7 @@ var testServices = adapters.Services{
 }
 
 func testHTTPServer(t *testing.T) (*Network, *httptest.Server) {
+	t.Helper()
 	adapter := adapters.NewSimAdapter(testServices)
 	network := NewNetwork(adapter, &NetworkConfig{
 		DefaultService: "test",
