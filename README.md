@@ -114,13 +114,16 @@ that for a given signature address returns true if the contract or contract owne
 
 #### Docker Images
 
-Two sets of Docker Images are available for ShyftGeth, the Postgresql Database, and the Shyft Blockchain Explorer, which can be used for local development and testnet connection. The development settings are included in docker-compose.yml, the testnet settings are included in docker-compose.production.yml. To launch these containers you will need to have docker-compose installed on your computer. Installation instructions for docker-compose are available [here](https://docs.docker.com/install/).
+Two sets of Docker Images are available for ShyftGeth, the Postgresql Database, and the Shyft Block Explorer, which can be used for local development and testnet connection. The development settings are included in docker-compose.yml, the testnet settings are included in docker-compose.production.yml. To launch these containers you will need to have docker-compose installed on your computer. Installation instructions for docker-compose are available [here](https://docs.docker.com/install/).
 
 **To build the images for the first time please run the following command:**
 
 `./shyft-geth --setup # clears persisted directories prior to docker build`
 
 `docker-compose up --build`
+
+Running the above command will build Shyft Block Explorer on port `:3000` which is being served by Shyft Block Explorer API on port `:8080`. 
+These are images being pulled from docker hub which are publicly available.
 
 If you would like to reinitialize/rebuild the docker images you can run the above mentioned command as well.
 
@@ -166,9 +169,13 @@ Services:
 docker-compose up -d --no-deps --build <docker compose file service name> 
 ``**
 
-ie. for shyftBlockExplorerApi:
+ie. for Shyft Block Explorer Api:
 
 **``docker-compose up -d --no-deps --build shyft_block_api``**
+
+ie. for Shyft Block Explorer UI:
+
+**``docker-compose up -d --no-deps --build shyft_block_ui``**
 
 The Postgresql Database Container will persist the database data to the directory ``./pg-data`` _. So if you do want to reinitialize the database you should delete this directory as well as the blockchain data directories ``(./shyftData ./privatenet)`` prior to launching the docker containers. There is a shell script available to delete these folders to run it execute the following command:
 
@@ -176,55 +183,7 @@ The Postgresql Database Container will persist the database data to the director
 
 Blockchain data is persisted to **``./ethash/.ethash and ./shyftData__``**. If you would like to reset the test blockchain you will need to delete the **``__./ethash ./shyftData & ./privatenet__``** directories.
 
-The docker container for the ShyftBlockExplorerApi utilizes govendor to minimize its image size. **If you would like the docker image for this container to reflect any uncommitted changes which may have occurred in the go-empyrean repository, ie. changes with respect to go-empyrean core (ie. cryptographic functions and database). Prior to launching the docker containers you should rebuild the vendor directory for the shyftBlockExplorerApi - by executing the following steps:**
-
-Remove existing shyftBlockExplorerApi vendor.json and vendored components:
-
-**``rm -rf shyftBlockExplorerApi/vendor``**
-
-reinitialize vendor.json
-
-**``cd shyftBlockExplorerApi && govendor init``**
-
-rebuild vendor.json using latest uncommitted changes
-
-**``govendor add +external``**
-
-Due to a bug in govendor and it not being able to pull in some dependencies that are c-header files 
-you should execute the following commands - see these issues - which whilst closed
-appears to have not been fixed: https://github.com/kardianos/govendor/issues/124 && https://github.com/kardianos/govendor/issues/61
-
-**``govendor remove github.com/ShyftNetwork/go-empyrean/crypto/secp256k1/^``**
-
-**``govendor fetch github.com/ShyftNetwork/go-empyrean/crypto/secp256k1/^``**
-
 NB: The Shyft Geth docker image size is 1+ GB so make sure you have adequate space on your disk drive/
-
-#### Shyft BlockExplorer API
-
-In order to store the block explorer database, a custom folder was created `./shyft_schema` that contains all the necessary functions to read and write to the explorer database.
-
-The main functions exist in `./core/shyft_database_util.go` and `./core/shyft_get_utils.go`
-
-To run the block explorer rest api that queries the postgres instance and returns a json body, open a new terminal window, navigate to the root directory of the project and run the following command:
-
-**``go run blockExplorerApi/*.go``**
-
-This will start a go server on port 8080 and allow you to either run the pre-existing block explorer or query the api endpoints. Its important to note, that if you have nothing in your postgres database the API will return nothing.
-
-#### Shyft Block Explorer UI
-
-To demonstrate the ability to create your own block explorer, a custom folder was created `./shyftBlockExplorerUI` that contains an example block explorer using react!
-
-To run the Block Explorer UI, ensure that you have the API running as mentioned above. Then run the following command in a terminal:
-
-``cd shyftBlockExplorerUI``
-
-``npm install``
-
-``npm run start``
-
-This will start a development server on ``port 3000`` and spin up an example block explorer that uses the API to query the postgres database.
 
 _TODO_
 
@@ -567,30 +526,6 @@ __The Postgresql Database Container will persist the database data to a folder i
 From your local machine you can view the database by connecting to the database in the container at 127.0.0.1:8001. To access the shyftBlockExplorer open a browser and visit http://localhost:3000
 
 __Blockchain data is persisted to ./ethash/.ethash__ and ./shyftData. If you would like to reset the test blockchain you will need to delete the ./ethash and ./shyftData directories.
-
-The docker container for the ShyftBlockExplorerApi utilizes govendor to minimize its image size. __If you would like the docker image for this container to reflect any uncommitted changes which may have occurred in the go-empyrean repository, ie. changes with respect to go-empyrean core (ie. cryptographic functions and database). Prior to launching the docker containers you should rebuild the vendor directory for the shyftBlockExplorerApi - by executing the following steps:__
-
-```
-# remove existing shyftBlockExplorerApi vendor.json and vendored components:
-
-rm -rf shyftBlockExplorerApi/vendor
-
-# reinitialize vendor.json
-
-cd shyftBlockExplorerApi && govendor init
-
-# rebuild vendor.json using latest uncommitted changes
-
-govendor add -tree -uncommitted +external
-
-# due to a bug in govendor and it not being able to pull in some dependencies that are c-header files 
-# you should execute the following commands - see these issues - which whilst closed
-# appears to have not been fixed: https://github.com/kardianos/govendor/issues/124 && https://github.com/kardianos/govendor/issues/61
-
-govendor remove github.com/ShyftNetwork/go-empyrean/crypto/secp256k1/^
-govendor fetch github.com/ShyftNetwork/go-empyrean/crypto/secp256k1/^
-
-```
 
 NB: The Shyft Geth docker image size is 1+ GB so make sure you have adequate space on your disk drive/
 

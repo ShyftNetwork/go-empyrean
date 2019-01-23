@@ -51,7 +51,7 @@ services:
   shyft_block_ui:
     image: shyftnetwork/blockexplorer_ui:latest
     ports:
-    - "80:3000"
+    - "3000:80"
     depends_on:
     - shyft_block_api
     networks:
