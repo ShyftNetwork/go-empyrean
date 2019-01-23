@@ -21,6 +21,7 @@ import (
 	crand "crypto/rand"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math"
 	"math/big"
 	"math/rand"
@@ -86,6 +87,7 @@ func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, resu
 	}
 	// Push new work to remote sealer
 	if ethash.workCh != nil {
+		fmt.Println("Pushing SealTask %+v \n", results)
 		ethash.workCh <- &sealTask{block: block, results: results}
 	}
 	var (

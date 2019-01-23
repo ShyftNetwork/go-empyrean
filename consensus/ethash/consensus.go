@@ -64,6 +64,11 @@ var (
 	calcDifficultyByzantium = makeDifficultyCalculator(big.NewInt(3000000))
 )
 
+var (
+	extraVanity = 32 // Fixed number of extra-data prefix bytes reserved for signer vanity
+	extraSeal   = 65 // Fixed number of extra-data suffix bytes reserved for signer seal
+)
+
 // Various error messages to mark blocks invalid. These should be private to
 // prevent engine specific errors from being referenced in the remainder of the
 // codebase, inherently breaking if the engine is swapped out. Please put common
@@ -565,6 +570,16 @@ func (ethash *Ethash) Prepare(chain consensus.ChainReader, header *types.Header)
 		return consensus.ErrUnknownAncestor
 	}
 	header.Difficulty = ethash.CalcDifficulty(chain, header.Time.Uint64(), parent)
+	// Ensure the extra data has all it's components
+	if len(header.Extra) < extraVanity {
+		header.Extra = append(header.Extra, bytes.Repeat([]byte{0x00}, extraVanity-len(header.Extra))...)
+	}
+	header.Extra = header.Extra[:extraVanity]
+
+	header.Extra = append(header.Extra, make([]byte, extraSeal)...)
+	fmt.Println("header in Prepare: %+v \n", header)
+	fmt.Println("header.Extra in Prepare: %+v \n", header.Extra)
+
 	return nil
 }
 
