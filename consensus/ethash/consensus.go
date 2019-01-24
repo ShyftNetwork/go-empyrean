@@ -80,6 +80,11 @@ var (
 	errInvalidPoW        = errors.New("invalid proof-of-work")
 )
 
+var (
+	extraVanity = 32 // Fixed number of extra-data prefix bytes reserved for signer vanity
+	extraSeal   = 65 // Fixed number of extra-data suffix bytes reserved for signer seal
+)
+
 // Author implements consensus.Engine, returning the header's coinbase as the
 // proof-of-work verified author of the block.
 func (ethash *Ethash) Author(header *types.Header) (common.Address, error) {
@@ -244,6 +249,9 @@ func (ethash *Ethash) VerifyUncles(chain consensus.ChainReader, block *types.Blo
 // See YP section 4.3.4. "Block Header Validity"
 func (ethash *Ethash) verifyHeader(chain consensus.ChainReader, header, parent *types.Header, uncle bool, seal bool) error {
 	// Ensure that the header's extra-data section is of a reasonable size
+	if uint64(len(header.Extra)) != params.MaximumExtraDataSize {
+		return fmt.Errorf("extra-data is not 97 bytes: %d != %d", len(header.Extra), params.MaximumExtraDataSize)
+	}
 	if uint64(len(header.Extra)) > params.MaximumExtraDataSize {
 		return fmt.Errorf("extra-data too long: %d > %d", len(header.Extra), params.MaximumExtraDataSize)
 	}
@@ -565,6 +573,14 @@ func (ethash *Ethash) Prepare(chain consensus.ChainReader, header *types.Header)
 		return consensus.ErrUnknownAncestor
 	}
 	header.Difficulty = ethash.CalcDifficulty(chain, header.Time.Uint64(), parent)
+	// Ensure the extra data has all it's components
+	if len(header.Extra) < extraVanity {
+		header.Extra = append(header.Extra, bytes.Repeat([]byte{0x00}, extraVanity-len(header.Extra))...)
+	}
+	header.Extra = header.Extra[:extraVanity]
+
+	header.Extra = append(header.Extra, make([]byte, extraSeal)...)
+
 	return nil
 }
 
