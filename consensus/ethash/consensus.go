@@ -556,6 +556,7 @@ func (ethash *Ethash) verifySeal(chain consensus.ChainReader, header *types.Head
 	}
 	// Verify the calculated values against the ones provided in the header
 	if !bytes.Equal(header.MixDigest[:], digest) {
+		// returned here
 		return errInvalidMixDigest
 	}
 	target := new(big.Int).Div(two256, header.Difficulty)
@@ -580,7 +581,8 @@ func (ethash *Ethash) Prepare(chain consensus.ChainReader, header *types.Header)
 	header.Extra = header.Extra[:extraVanity]
 
 	header.Extra = append(header.Extra, make([]byte, extraSeal)...)
-
+	//fmt.Println("header in Prepare: %+v \n", header)
+	//fmt.Println("header.Extra in Prepare: %+v \n", 	header.Extra)
 	return nil
 }
 
@@ -612,7 +614,7 @@ func (ethash *Ethash) SealHash(header *types.Header) (hash common.Hash) {
 		header.GasLimit,
 		header.GasUsed,
 		header.Time,
-		header.Extra,
+		header.Extra[:len(header.Extra)-65],
 	})
 	hasher.Sum(hash[:0])
 	return hash

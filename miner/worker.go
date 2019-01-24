@@ -24,6 +24,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"fmt"
+
 	"github.com/ShyftNetwork/go-empyrean/common"
 	"github.com/ShyftNetwork/go-empyrean/consensus"
 	"github.com/ShyftNetwork/go-empyrean/consensus/misc"
@@ -509,8 +511,14 @@ func (w *worker) taskLoop() {
 			if w.newTaskHook != nil {
 				w.newTaskHook(task)
 			}
+			fmt.Println("this is block before its mined")
+			fmt.Printf("%+v \n\n\n", task.block)
+			fmt.Printf("%+v \n \n \n ", task.block.Header())
+
 			// Reject duplicate sealing work due to resubmitting.
 			sealHash := w.engine.SealHash(task.block.Header())
+			fmt.Println("hmmm")
+			fmt.Println("seal hash is ", sealHash)
 			if sealHash == prev {
 				continue
 			}
@@ -550,11 +558,18 @@ func (w *worker) resultLoop() {
 				continue
 			}
 			var (
+				/// here is very important should log both of these
 				sealhash = w.engine.SealHash(block.Header())
 				hash     = block.Hash()
 			)
+			fmt.Println("this is block after its been mined")
+			fmt.Printf("%+v \n \n \n ", block)
+			fmt.Printf("%+v \n \n \n ", block.Header())
+			fmt.Println("seal hash ", sealhash)
+
 			w.pendingMu.RLock()
 			task, exist := w.pendingTasks[sealhash]
+			fmt.Print("\n\n%+v\n\n", w.pendingTasks)
 			w.pendingMu.RUnlock()
 			if !exist {
 				log.Error("Block found but no relative pending task", "number", block.Number(), "sealhash", sealhash, "hash", hash)
