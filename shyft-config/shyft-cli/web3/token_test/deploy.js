@@ -15,3 +15,4 @@ var mytoken = mytokenContract.new(
          console.log('Contract mined! address: ' + contract.address + ' transactionHash: ' + contract.transactionHash);
     }
  })
+

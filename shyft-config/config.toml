@@ -45,9 +45,9 @@ HTTPHost = "0.0.0.0"
 HTTPPort = 8545
 HTTPCors = ["*"]
 HTTPVirtualHosts = ["localhost"]
-HTTPModules = ["net", "web3", "eth", "shh", "miner"]
+HTTPModules = ["net", "web3", "eth", "shh", "miner", "debug"]
 WSPort = 8546
-WSModules = ["net", "web3", "eth", "shh"]
+WSModules = ["net", "web3", "eth", "shh", "debug"]
 WhisperSignersContract = "0xfAeCcaE8c1AF6bDFd71095E1B6a2F61C61C8a7E7"
 
 [Node.P2P]

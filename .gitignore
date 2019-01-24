@@ -53,6 +53,9 @@ shyftData/*
 shyft-cli/web3/token_test/node_modules
 shyft-cli/web3/transfer-through-master/node_modules
 shyft-cli/web3/transfer-through-master/build
+shyft-cli/web3/token_test/node_modules
+shyft-cli/web3/token_test/.idea
+shyft-cli/web3/token_test/.env
 
 # Remove pg data
 pg-data/*
@@ -66,3 +69,4 @@ build/_workspace/*
 
 shyft-config/keystore/*
 shyft-config/unlockPasswords.txt
+.env

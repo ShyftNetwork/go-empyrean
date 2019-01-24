@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"strings"
 
+	"encoding/hex"
+
 	"github.com/ShyftNetwork/go-empyrean/common"
 	Rewards "github.com/ShyftNetwork/go-empyrean/consensus/ethash"
 	"github.com/ShyftNetwork/go-empyrean/core/sTypes"
@@ -155,6 +157,7 @@ func SWriteBlock(db ethdb.SDatabase, block *types.Block, receipts []*types.Recei
 //swriteTransactions writes to sqldb, a SHYFT postgres instance
 func swriteTransactions(db ethdb.SDatabase, tx *types.Transaction, blockHash common.Hash, blockNumber string, receipts []*types.Receipt, age time.Time, gasLimit uint64) error {
 	var isContract bool
+	var isERC bool
 	var statusFromReciept, toAddr string
 	var contractAddressFromReciept common.Address
 	if tx.To() == nil {
@@ -168,6 +171,21 @@ func swriteTransactions(db ethdb.SDatabase, tx *types.Transaction, blockHash com
 				statusFromReciept = "SUCCESS"
 			}
 		}
+		s := hex.EncodeToString(tx.Data())
+		fmt.Println("to addr", toAddr)
+		rray := [6]string{"dd62ed3e", "095ea7b3", "70a08231", "18160ddd", "a9059cbb", "23b872dd"}
+		var c = 0
+		for _, i := range rray {
+			if strings.Contains(s, i) {
+				c++
+				fmt.Println("to addr", toAddr)
+				fmt.Println("hot potato", i, c)
+			}
+		}
+		if c == 6 {
+			isERC = true
+		}
+		fmt.Println(isERC)
 		isContract = true
 		tempAddr := &contractAddressFromReciept
 		toAddr = tempAddr.String()
@@ -202,6 +220,7 @@ func swriteTransactions(db ethdb.SDatabase, tx *types.Transaction, blockHash com
 		Status:      statusFromReciept,
 		IsContract:  isContract,
 	}
+
 	isContractCheck := db.IsContract(txData.To)
 	if isContractCheck {
 		db.InsertTx(txData)

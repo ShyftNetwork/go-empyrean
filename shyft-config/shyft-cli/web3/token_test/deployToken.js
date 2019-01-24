@@ -16,7 +16,7 @@ var mytoken = mytokenContract.new(
             var a = mytokenContract.at(contract.address);
             a.transfer.sendTransaction(web3.eth.accounts[0], 5000000, {from: web3.eth.accounts[0]}, function (err, res) {
                 if (err) console.log("err", err);
-                console.log(res)
+                console.log("transfer success:", res)
             })
         }
     });
