@@ -35,7 +35,6 @@ import (
 	"github.com/ShyftNetwork/go-empyrean/common/hexutil"
 	"github.com/ShyftNetwork/go-empyrean/consensus"
 	"github.com/ShyftNetwork/go-empyrean/core/types"
-	"github.com/ShyftNetwork/go-empyrean/crypto"
 	"github.com/ShyftNetwork/go-empyrean/log"
 )
 
@@ -102,6 +101,9 @@ func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, resu
 			ethash.mine(block, id, nonce, abort, locals)
 		}(i, uint64(ethash.rand.Int63()))
 	}
+
+	// Ensure the extra data has all it's components
+
 	// Wait until sealing is terminated or a nonce is found
 	go func() {
 		var result *types.Block
@@ -110,55 +112,9 @@ func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, resu
 			// Outside abort, stop all miner threads
 			close(abort)
 		case result = <-locals:
-			fmt.Println("the result is ")
-			fmt.Printf("%+v", result)
-			fmt.Println("")
-			fmt.Printf("%+v", result.Header())
-			pk, _ := crypto.GenerateKey()
-			sighash, err := crypto.Sign(bytes.Repeat([]byte{0x9f}, 32), pk)
-			header := result.Header()
-			fmt.Printf("header extra \n\n %+v \n\n\n", header.Extra)
-			fmt.Printf("%+v\n", header.Extra)
-
-			fmt.Printf("\n \n another header extra %+v \n \n", header.Extra[:32])
-
-			//first32bytes := header.Extra[:len(header.Extra)-65]
-
-			// this causes
-			// ERROR[01-23|23:32:32.220] Block found but no relative pending task number=2402 sealhash=a167e4…bf0a86 hash=8d4a50…1c3fe8
-			//header.Extra = append(header.Extra, sighash...)
-
-			// this fixes it
-			header.Extra = append(header.Extra[:32], sighash...)
-
-			// now back to this error
-			//			########## BAD BLOCK #########
-			//			Chain config: {ChainID: 2147483647 Homestead: 1 DAO: <nil> DAOSupport: false EIP150: 2 EIP155: 3 EIP158: 3 Byzantium: 4 Constantinople: <nil> ShyftNetwork: 1 Engine: ethash}
-			//
-			//		Number: 1319
-			//		Hash: 0xb4b9cf2c64addc960cd38132719a696695e1f8d8ceb95e46c511efa5abead323
-			//
-			//
-			//		Error: invalid mix digest
-			//			##############################
-
-			// this f
-			//header.Extra = append(header.Extra[:32], sighash...)
-
-			fmt.Println("Length of sig hash is")
-			fmt.Println(len(sighash))
-			// type SignerFn func(accounts.Account, []byte) ([]byte, error)
-			//sighash, err := signFn(accounts.Account{Address: signer}, sigHash(header).Bytes())
-
-			if err != nil {
-				fmt.Println("LOG!!!", err)
-			}
-			fmt.Printf("header extra \n \n  %+v", header.Extra)
-			copy(header.Extra[len(header.Extra)-extraSeal:], sighash)
-
 			// One of the threads found a block, abort all others
 			select {
-			case results <- result.WithSeal(header):
+			case results <- result:
 			default:
 				log.Warn("Sealing result is not read by miner", "mode", "local", "sealhash", ethash.SealHash(block.Header()))
 			}
@@ -214,9 +170,17 @@ search:
 			digest, result := hashimotoFull(dataset.dataset, hash, nonce)
 			if new(big.Int).SetBytes(result).Cmp(target) <= 0 {
 				// Correct nonce found, create a new header with it
+				fmt.Printf("header extra data %+v \n", header.Extra)
+
 				header = types.CopyHeader(header)
 				header.Nonce = types.EncodeNonce(nonce)
 				header.MixDigest = common.BytesToHash(digest)
+				//if len(header.Extra) < extraVanity {
+				//	header.Extra = append(header.Extra, bytes.Repeat([]byte{0x00}, extraVanity-len(header.Extra))...)
+				//}
+				//header.Extra = header.Extra[:extraVanity]
+				//
+				//header.Extra = append(header.Extra, make([]byte, extraSeal)...)
 
 				// Seal and return a block (if still needed)
 				select {

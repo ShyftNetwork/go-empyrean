@@ -569,7 +569,7 @@ func (w *worker) resultLoop() {
 
 			w.pendingMu.RLock()
 			task, exist := w.pendingTasks[sealhash]
-			fmt.Print("\n\n%+v\n\n", w.pendingTasks)
+			fmt.Print("Pending Tasks \n\n%+v\n\n", w.pendingTasks)
 			w.pendingMu.RUnlock()
 			if !exist {
 				log.Error("Block found but no relative pending task", "number", block.Number(), "sealhash", sealhash, "hash", hash)
