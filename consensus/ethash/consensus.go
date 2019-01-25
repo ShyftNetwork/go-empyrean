@@ -529,10 +529,17 @@ func (ethash *Ethash) verifySeal(chain consensus.ChainReader, header *types.Head
 		result []byte
 	)
 	// If fast-but-heavy PoW verification was requested, use an ethash dataset
+
+	extra := header.Extra[:len(header.Extra)-71]
+	newHeader := types.CopyHeader(header)
+	newHeader.Extra = extra
+
+	sealHash := ethash.SealHash(newHeader).Bytes()
 	if fulldag {
 		dataset := ethash.dataset(number, true)
 		if dataset.generated() {
-			digest, result = hashimotoFull(dataset.dataset, ethash.SealHash(header).Bytes(), header.Nonce.Uint64())
+			fmt.Printf("Header on line 535 %+v\n\n\n", header)
+			digest, result = hashimotoFull(dataset.dataset, sealHash, header.Nonce.Uint64())
 
 			// Datasets are unmapped in a finalizer. Ensure that the dataset stays alive
 			// until after the call to hashimotoFull so it's not unmapped while being used.
@@ -550,7 +557,9 @@ func (ethash *Ethash) verifySeal(chain consensus.ChainReader, header *types.Head
 		if ethash.config.PowMode == ModeTest {
 			size = 32 * 1024
 		}
-		digest, result = hashimotoLight(size, cache.cache, ethash.SealHash(header).Bytes(), header.Nonce.Uint64())
+		fmt.Printf("Header on line 554 %+v\n\n\n", header)
+
+		digest, result = hashimotoLight(size, cache.cache, sealHash, header.Nonce.Uint64())
 
 		// Caches are unmapped in a finalizer. Ensure that the cache stays alive
 		// until after the call to hashimotoLight so it's not unmapped while being used.
@@ -582,6 +591,7 @@ func (ethash *Ethash) Prepare(chain consensus.ChainReader, header *types.Header)
 // Finalize implements consensus.Engine, accumulating the block and uncle rewards,
 // setting the final state and assembling the block.
 func (ethash *Ethash) Finalize(chain consensus.ChainReader, header *types.Header, state *state.StateDB, txs []*types.Transaction, uncles []*types.Header, receipts []*types.Receipt) (*types.Block, error) {
+	fmt.Println("in finalize function -----------------   ")
 	// Accumulate any block and uncle rewards and commit the final state root
 	accumulateRewards(chain.Config(), state, header, uncles)
 	header.Root = state.IntermediateRoot(chain.Config().IsEIP158(header.Number))

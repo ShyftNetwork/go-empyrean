@@ -143,11 +143,11 @@ func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, resu
 			fmt.Printf("Length of Extra After Sig %+v \n", len(header.Extra))
 			fmt.Printf("Extra After Signing %+v \n", header.Extra)
 			fmt.Printf("Actual Length of Extra After Sig %+v \n", len(result.Header().Extra))
-			//result = result.WithSeal(header)
+			//newResult := result.WithSeal(header)
 			//fmt.Printf("Actual Length of Extra WITH SEAL After Sig %+v \n", len(result.Header().Extra))
 			select {
 
-			case results <- result:
+			case results <- block.WithSeal(header):
 			default:
 				log.Warn("Sealing result is not read by miner", "mode", "local", "sealhash", ethash.SealHash(block.Header()))
 			}
@@ -176,6 +176,7 @@ func (ethash *Ethash) mine(block *types.Block, id int, seed uint64, abort chan s
 		number  = header.Number.Uint64()
 		dataset = ethash.dataset(number, false)
 	)
+	fmt.Printf("Header on line 179 sealer %+v\n\n\n", header)
 	// Start generating random nonces until we abort or find a good one
 	var (
 		attempts = int64(0)
