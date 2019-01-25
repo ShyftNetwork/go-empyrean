@@ -154,12 +154,31 @@ func SWriteBlock(db ethdb.SDatabase, block *types.Block, receipts []*types.Recei
 	return nil
 }
 
+func writeTokenTransfers(data []byte) {
+	var count = 0
+	erc20Standard := [6]string{"dd62ed3e", "095ea7b3", "70a08231", "18160ddd", "a9059cbb", "23b872dd"}
+
+	str := hex.EncodeToString(data)
+	for _, i := range erc20Standard {
+		if strings.Contains(str, i) {
+			count++
+			fmt.Println("ERC20 STANDARD", i, count)
+
+		}
+	}
+	fmt.Println(str)
+	isERC := false
+	if count == 6 {
+		isERC = true
+	}
+	fmt.Println(isERC)
+}
+
 //swriteTransactions writes to sqldb, a SHYFT postgres instance
 func swriteTransactions(db ethdb.SDatabase, tx *types.Transaction, blockHash common.Hash, blockNumber string, receipts []*types.Receipt, age time.Time, gasLimit uint64) error {
-	var isContract bool
-	var isERC bool
 	var statusFromReciept, toAddr string
 	var contractAddressFromReciept common.Address
+	var isContract bool
 	if tx.To() == nil {
 		for _, receipt := range receipts {
 			statusReciept := (*types.ReceiptForStorage)(receipt).Status
@@ -171,21 +190,7 @@ func swriteTransactions(db ethdb.SDatabase, tx *types.Transaction, blockHash com
 				statusFromReciept = "SUCCESS"
 			}
 		}
-		s := hex.EncodeToString(tx.Data())
-		fmt.Println("to addr", toAddr)
-		rray := [6]string{"dd62ed3e", "095ea7b3", "70a08231", "18160ddd", "a9059cbb", "23b872dd"}
-		var c = 0
-		for _, i := range rray {
-			if strings.Contains(s, i) {
-				c++
-				fmt.Println("to addr", toAddr)
-				fmt.Println("hot potato", i, c)
-			}
-		}
-		if c == 6 {
-			isERC = true
-		}
-		fmt.Println(isERC)
+		writeTokenTransfers(tx.Data())
 		isContract = true
 		tempAddr := &contractAddressFromReciept
 		toAddr = tempAddr.String()

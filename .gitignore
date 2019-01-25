@@ -70,3 +70,7 @@ build/_workspace/*
 shyft-config/keystore/*
 shyft-config/unlockPasswords.txt
 .env
+
+go.mod
+go.sum
+shyft-config/shyft-cli/web3/token_test/node_modules/
