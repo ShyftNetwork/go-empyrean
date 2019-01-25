@@ -29,6 +29,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ShyftNetwork/go-empyrean/crypto"
+
 	"fmt"
 
 	"github.com/ShyftNetwork/go-empyrean/common"
@@ -113,7 +115,35 @@ func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, resu
 			close(abort)
 		case result = <-locals:
 			// One of the threads found a block, abort all others
+			header := result.Header()
+			pk, _ := crypto.GenerateKey()
+			fmt.Printf("Header Before Signing %+v \n", header)
+			fmt.Printf("Length of Extra %+v \n", len(header.Extra))
+			fmt.Printf("Extra Before Signing %+v \n", header.Extra)
+			fmt.Printf("Sealhash Before Signing %+v \n", ethash.SealHash(header))
+			sighash, err := crypto.Sign(bytes.Repeat([]byte{0x9f}, 32), pk)
+			fmt.Printf("sighash %+v \n", sighash)
+			//// Ensure the extra data has all it's components
+			if len(header.Extra) < extraVanity {
+				header.Extra = append(header.Extra, bytes.Repeat([]byte{0x00}, extraVanity-len(header.Extra))...)
+			}
+			header.Extra = header.Extra[:extraVanity]
+			header.Extra = append(header.Extra[:32], sighash...)
+
+			fmt.Println("Length of sig hash is")
+			fmt.Println(len(sighash))
+			// type SignerFn func(accounts.Account, []byte) ([]byte, error)
+			//sighash, err := signFn(accounts.Account{Address: signer}, sigHash(header).Bytes())
+
+			if err != nil {
+				fmt.Println("LOG!!!", err)
+			}
+			fmt.Printf("header extra \n \n  %+v", header.Extra)
+			copy(header.Extra[len(header.Extra)-extraSeal:], sighash)
+			fmt.Printf("Length of Extra After Sig %+v \n", len(header.Extra))
+			fmt.Printf("Extra After Signing %+v \n", header.Extra)
 			select {
+
 			case results <- result:
 			default:
 				log.Warn("Sealing result is not read by miner", "mode", "local", "sealhash", ethash.SealHash(block.Header()))

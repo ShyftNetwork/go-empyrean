@@ -30,7 +30,6 @@ import (
 	"github.com/ShyftNetwork/go-empyrean/consensus/misc"
 	"github.com/ShyftNetwork/go-empyrean/core/state"
 	"github.com/ShyftNetwork/go-empyrean/core/types"
-	"github.com/ShyftNetwork/go-empyrean/crypto"
 	"github.com/ShyftNetwork/go-empyrean/params"
 	"github.com/ShyftNetwork/go-empyrean/rlp"
 	mapset "github.com/deckarep/golang-set"
@@ -250,6 +249,8 @@ func (ethash *Ethash) VerifyUncles(chain consensus.ChainReader, block *types.Blo
 // See YP section 4.3.4. "Block Header Validity"
 func (ethash *Ethash) verifyHeader(chain consensus.ChainReader, header, parent *types.Header, uncle bool, seal bool) error {
 	// Ensure that the header's extra-data section is of a reasonable size
+	fmt.Printf("header --> at Verify %+v \n", header)
+	fmt.Printf("header extra length --> at Verify %+v \n", len(header.Extra))
 	if uint64(len(header.Extra)) != params.MaximumExtraDataSize {
 		return fmt.Errorf("extra-data is not 97 bytes: %d != %d", len(header.Extra), params.MaximumExtraDataSize)
 	}
@@ -575,15 +576,6 @@ func (ethash *Ethash) Prepare(chain consensus.ChainReader, header *types.Header)
 		return consensus.ErrUnknownAncestor
 	}
 	header.Difficulty = ethash.CalcDifficulty(chain, header.Time.Uint64(), parent)
-	//// Ensure the extra data has all it's components
-	//if len(header.Extra) < extraVanity {
-	//	header.Extra = append(header.Extra, bytes.Repeat([]byte{0x00}, extraVanity-len(header.Extra))...)
-	//}
-	//header.Extra = header.Extra[:extraVanity]
-	//
-	//header.Extra = append(header.Extra, make([]byte, extraSeal)...)
-	////fmt.Println("header in Prepare: %+v \n", header)
-	//fmt.Println("header.Extra in Prepare: %+v \n", 	header.Extra)
 	return nil
 }
 
@@ -593,52 +585,6 @@ func (ethash *Ethash) Finalize(chain consensus.ChainReader, header *types.Header
 	// Accumulate any block and uncle rewards and commit the final state root
 	accumulateRewards(chain.Config(), state, header, uncles)
 	header.Root = state.IntermediateRoot(chain.Config().IsEIP158(header.Number))
-
-	pk, _ := crypto.GenerateKey()
-	sighash, err := crypto.Sign(bytes.Repeat([]byte{0x9f}, 32), pk)
-	//// Ensure the extra data has all it's components
-	if len(header.Extra) < extraVanity {
-		header.Extra = append(header.Extra, bytes.Repeat([]byte{0x00}, extraVanity-len(header.Extra))...)
-	}
-	header.Extra = header.Extra[:extraVanity]
-	//fmt.Printf("header extra \n\n %+v \n\n\n", header.Extra)
-	//fmt.Printf("%+v\n", header.Extra)
-	//
-	//fmt.Printf("\n \n another header extra %+v \n \n", header.Extra[:32])
-
-	//first32bytes := header.Extra[:len(header.Extra)-65]
-
-	// this causes
-	// ERROR[01-23|23:32:32.220] Block found but no relative pending task number=2402 sealhash=a167e4…bf0a86 hash=8d4a50…1c3fe8
-	//header.Extra = append(header.Extra, sighash...)
-
-	// this fixes it
-	//header.Extra = append(header.Extra[:32], sighash...)
-
-	// now back to this error
-	//			########## BAD BLOCK #########
-	//			Chain config: {ChainID: 2147483647 Homestead: 1 DAO: <nil> DAOSupport: false EIP150: 2 EIP155: 3 EIP158: 3 Byzantium: 4 Constantinople: <nil> ShyftNetwork: 1 Engine: ethash}
-	//
-	//		Number: 1319
-	//		Hash: 0xb4b9cf2c64addc960cd38132719a696695e1f8d8ceb95e46c511efa5abead323
-	//
-	//
-	//		Error: invalid mix digest
-	//			##############################
-
-	// this f
-	header.Extra = append(header.Extra[:32], sighash...)
-
-	fmt.Println("Length of sig hash is")
-	fmt.Println(len(sighash))
-	// type SignerFn func(accounts.Account, []byte) ([]byte, error)
-	//sighash, err := signFn(accounts.Account{Address: signer}, sigHash(header).Bytes())
-
-	if err != nil {
-		fmt.Println("LOG!!!", err)
-	}
-	fmt.Printf("header extra \n \n  %+v", header.Extra)
-	copy(header.Extra[len(header.Extra)-extraSeal:], sighash)
 
 	// Header seems complete, assemble into a block and return
 	return types.NewBlock(header, txs, uncles, receipts), nil
