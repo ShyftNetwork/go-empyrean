@@ -142,6 +142,9 @@ func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, resu
 			copy(header.Extra[len(header.Extra)-extraSeal:], sighash)
 			fmt.Printf("Length of Extra After Sig %+v \n", len(header.Extra))
 			fmt.Printf("Extra After Signing %+v \n", header.Extra)
+			fmt.Printf("Actual Length of Extra After Sig %+v \n", len(result.Header().Extra))
+			//result = result.WithSeal(header)
+			//fmt.Printf("Actual Length of Extra WITH SEAL After Sig %+v \n", len(result.Header().Extra))
 			select {
 
 			case results <- result:
