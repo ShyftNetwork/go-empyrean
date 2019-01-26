@@ -157,8 +157,9 @@ func SWriteBlock(db ethdb.SDatabase, block *types.Block, receipts []*types.Recei
 func writeTokenTransfers(data []byte) {
 	var count = 0
 	erc20Standard := [6]string{"dd62ed3e", "095ea7b3", "70a08231", "18160ddd", "a9059cbb", "23b872dd"}
-
+	fmt.Println("+++", data)
 	str := hex.EncodeToString(data)
+	fmt.Println(str)
 	for _, i := range erc20Standard {
 		if strings.Contains(str, i) {
 			count++
