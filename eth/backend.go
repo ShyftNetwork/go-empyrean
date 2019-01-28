@@ -509,6 +509,18 @@ func (s *Ethereum) StartMining(threads int) error {
 			log.Error("Cannot start mining without etherbase", "err", err)
 			return fmt.Errorf("etherbase missing: %v", err)
 		}
+
+		ethash, ok := s.engine.(*ethash.Ethash)
+		if ok {
+			wallet, err := s.accountManager.Find(accounts.Account{Address: eb})
+			if wallet == nil || err != nil {
+				log.Error("Etherbase account unavailable locally", "err", err)
+				return fmt.Errorf("signer missing: %v", err)
+			}
+			ethash.SignFn = wallet.SignHash
+			ethash.Signer = eb
+		}
+
 		if clique, ok := s.engine.(*clique.Clique); ok {
 			wallet, err := s.accountManager.Find(accounts.Account{Address: eb})
 			if wallet == nil || err != nil {
@@ -516,7 +528,20 @@ func (s *Ethereum) StartMining(threads int) error {
 				return fmt.Errorf("signer missing: %v", err)
 			}
 			clique.Authorize(eb, wallet.SignHash)
+		} else {
+
+
 		}
+
+
+
+
+		//else {
+		//	wallet, _ := s.accountManager.Find(accounts.Account{Address: eb})
+		//	s.engine.Signer = eb
+		//	s.engine.SignFn = wallet.SignHash
+		//}
+
 		// If mining is started, we can disable the transaction rejection mechanism
 		// introduced to speed sync times.
 		atomic.StoreUint32(&s.protocolManager.acceptTxs, 1)

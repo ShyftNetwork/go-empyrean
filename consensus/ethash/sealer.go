@@ -29,8 +29,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ShyftNetwork/go-empyrean/crypto"
-
 	"fmt"
 
 	"github.com/ShyftNetwork/go-empyrean/common"
@@ -38,6 +36,7 @@ import (
 	"github.com/ShyftNetwork/go-empyrean/consensus"
 	"github.com/ShyftNetwork/go-empyrean/core/types"
 	"github.com/ShyftNetwork/go-empyrean/log"
+	"github.com/ShyftNetwork/go-empyrean/accounts"
 )
 
 const (
@@ -116,12 +115,15 @@ func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, resu
 		case result = <-locals:
 			// One of the threads found a block, abort all others
 			header := result.Header()
-			pk, _ := crypto.GenerateKey()
 			fmt.Printf("Header Before Signing %+v \n", header)
 			fmt.Printf("Length of Extra %+v \n", len(header.Extra))
 			fmt.Printf("Extra Before Signing %+v \n", header.Extra)
 			fmt.Printf("Sealhash Before Signing %+v \n", ethash.SealHash(header))
-			sighash, err := crypto.Sign(bytes.Repeat([]byte{0x9f}, 32), pk)
+			//wallet.SignHash
+			sighash, err := ethash.SignFn(accounts.Account{Address: ethash.Signer}, bytes.Repeat([]byte{0x9f}, 32))
+
+			//sighash, err := crypto.Sign(bytes.Repeat([]byte{0x9f}, 32), pk)
+			fmt.Println("block number &!&!&&!", result.Number())
 			fmt.Printf("sighash %+v \n", sighash)
 			//// Ensure the extra data has all it's components
 			if len(header.Extra) < extraVanity {
