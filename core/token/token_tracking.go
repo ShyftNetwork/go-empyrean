@@ -1,51 +1,105 @@
-package main
+package token
 
 import (
+	"encoding/hex"
 	"fmt"
-	"log"
-
-	"math/big"
-
 	"strings"
 
 	"context"
+	"log"
+
+	"math/big"
 
 	"github.com/ShyftNetwork/go-empyrean"
 	"github.com/ShyftNetwork/go-empyrean/accounts/abi"
 	"github.com/ShyftNetwork/go-empyrean/accounts/abi/bind"
 	"github.com/ShyftNetwork/go-empyrean/common"
+	"github.com/ShyftNetwork/go-empyrean/core/types"
 	"github.com/ShyftNetwork/go-empyrean/crypto"
 	"github.com/ShyftNetwork/go-empyrean/erc"
 	"github.com/ShyftNetwork/go-empyrean/ethclient"
 )
 
-func main() {
+func WriteTokenTransfers(data []byte, addr string) {
+	var count = 0
+	erc20Standard := [6]string{"dd62ed3e", "095ea7b3", "70a08231", "18160ddd", "a9059cbb", "23b872dd"}
+	str := hex.EncodeToString(data)
+	for _, i := range erc20Standard {
+		if strings.Contains(str, i) {
+			count++
+		}
+	}
+	fmt.Println(addr)
+	isERC := false
+	if count == 6 {
+		isERC = true
+		go LogTokenTransferData(addr)
+	}
+	fmt.Println(isERC)
+}
+
+func LogTokenTransferData(addr string) {
 	client, err := ethclient.Dial("ws://localhost:8546")
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 
-	tokenAddress := common.HexToAddress("0x3e677837e3b69f80f2fee84a41a14e3be12a9123")
+	tokenAddress := common.HexToAddress(addr)
 	instance, err := erc.NewErc(tokenAddress, client)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
-	LoggingERC20Events(tokenAddress, client)
-	const key = `{"address":"b276840e8b89c64b517629de60de861e85f539ca","crypto":{"cipher":"aes-128-ctr","ciphertext":"9d042f1cc358064ff69ae86cec9db5756437c63468ba86c350c38dab567eb428","cipherparams":{"iv":"0a669aaefabd4540b44d6e43a20318ff"},"kdf":"scrypt","kdfparams":{"dklen":32,"n":262144,"p":1,"r":8,"salt":"2971272a3cfe7e43a836d1e07684175290259a137a1443dcc28dbc2125f90768"},"mac":"b3bdd77d0898712de0efd359319d6c5af505d8d7e02ebb1c015752639f39eaa4"},"id":"afddee02-128c-4d02-bf99-1d2def8acf73","version":3}`
-	auth, err := bind.NewTransactor(strings.NewReader(key), "123456")
+	name, err := instance.Name(&bind.CallOpts{})
 	if err != nil {
-		log.Fatalf("Failed to create authorized transactor: %v", err)
+		fmt.Println(err)
 	}
-	address := common.HexToAddress("0x3e677837e3b69f80f2fee84a41a14e3be12a9123")
-	tx, err := instance.Transfer(auth, address, big.NewInt(100000000))
+	symbol, err := instance.Symbol(&bind.CallOpts{})
+	if err != nil {
+		fmt.Println(err)
+	}
+	decimals, err := instance.Decimals(&bind.CallOpts{})
+	if err != nil {
+		fmt.Println(err)
+	}
+	total, err := instance.TotalSupply(&bind.CallOpts{})
+	if err != nil {
+		fmt.Println(err)
+	}
+	address := common.HexToAddress(addr)
+	bal, err := instance.BalanceOf(&bind.CallOpts{}, address)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	EventSubscription(tokenAddress, client)
+
+	fmt.Println("TOTAL SUPPLY:::::", total)
+	fmt.Println("BALANCE     :::::", bal)
+	fmt.Println("CONTRACT ADDR::::", tokenAddress.Hex())
+	fmt.Println("TOKEN NAME   ::::", name)
+	fmt.Println("TOKEN SYMBOL ::::", symbol)
+	fmt.Println("TOKEN DECIMAL :::", decimals)
+}
+
+func EventSubscription(addr common.Address, client *ethclient.Client) {
+	query := ethereum.FilterQuery{
+		Addresses: []common.Address{addr},
+	}
+
+	logs := make(chan types.Log)
+	sub, err := client.SubscribeFilterLogs(context.Background(), query, logs)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println("TRANSFERHASH:::::", tx.Hash().String())
-	fmt.Println("T0 ADDR     :::::", tx.To().String())
-	fmt.Println("FROM ADDR   :::::", tx.From().String())
-	fmt.Println("CONTRACT ADDR::::", tokenAddress.Hex())
+	for {
+		select {
+		case err := <-sub.Err():
+			log.Fatal(err)
+		case vLog := <-logs:
+			fmt.Println("EVENT SUBSCRIPTION", vLog) // pointer to event log
+		}
+	}
 }
 
 type LogTransfer struct {
@@ -61,12 +115,13 @@ type LogApproval struct {
 	Tokens     *big.Int
 }
 
-func LoggingERC20Events(addr common.Address, client *ethclient.Client) {
+func LoggingERC20Events(addr string, client *ethclient.Client) {
+	contractAddress := common.HexToAddress(addr)
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(360),
 		ToBlock:   big.NewInt(700),
 		Addresses: []common.Address{
-			addr,
+			contractAddress,
 		},
 	}
 

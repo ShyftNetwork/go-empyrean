@@ -256,7 +256,6 @@ func rollbackFn(message string, bc *core.BlockChain, miner *miner.Miner, shyftDb
 		if miner != nil {
 			miner.Start(coinbase)
 		}
-		fmt.Println("FOOOO")
 
 	} else {
 		fmt.Printf("Rollback was not executed as the block with blockhash= %s does not exist \n", blockhash)

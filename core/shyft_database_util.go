@@ -10,11 +10,10 @@ import (
 	"fmt"
 	"strings"
 
-	"encoding/hex"
-
 	"github.com/ShyftNetwork/go-empyrean/common"
 	Rewards "github.com/ShyftNetwork/go-empyrean/consensus/ethash"
 	"github.com/ShyftNetwork/go-empyrean/core/sTypes"
+	"github.com/ShyftNetwork/go-empyrean/core/token"
 	"github.com/ShyftNetwork/go-empyrean/core/types"
 	"github.com/ShyftNetwork/go-empyrean/ethdb"
 	"github.com/ShyftNetwork/go-empyrean/log"
@@ -154,27 +153,6 @@ func SWriteBlock(db ethdb.SDatabase, block *types.Block, receipts []*types.Recei
 	return nil
 }
 
-func writeTokenTransfers(data []byte) {
-	var count = 0
-	erc20Standard := [6]string{"dd62ed3e", "095ea7b3", "70a08231", "18160ddd", "a9059cbb", "23b872dd"}
-	fmt.Println("+++", data)
-	str := hex.EncodeToString(data)
-	fmt.Println(str)
-	for _, i := range erc20Standard {
-		if strings.Contains(str, i) {
-			count++
-			fmt.Println("ERC20 STANDARD", i, count)
-
-		}
-	}
-	fmt.Println(str)
-	isERC := false
-	if count == 6 {
-		isERC = true
-	}
-	fmt.Println(isERC)
-}
-
 //swriteTransactions writes to sqldb, a SHYFT postgres instance
 func swriteTransactions(db ethdb.SDatabase, tx *types.Transaction, blockHash common.Hash, blockNumber string, receipts []*types.Receipt, age time.Time, gasLimit uint64) error {
 	var statusFromReciept, toAddr string
@@ -191,7 +169,7 @@ func swriteTransactions(db ethdb.SDatabase, tx *types.Transaction, blockHash com
 				statusFromReciept = "SUCCESS"
 			}
 		}
-		writeTokenTransfers(tx.Data())
+		go token.WriteTokenTransfers(tx.Data(), contractAddressFromReciept.String())
 		isContract = true
 		tempAddr := &contractAddressFromReciept
 		toAddr = tempAddr.String()
