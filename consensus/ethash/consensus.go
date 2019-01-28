@@ -30,9 +30,10 @@ import (
 	"github.com/ShyftNetwork/go-empyrean/consensus/misc"
 	"github.com/ShyftNetwork/go-empyrean/core/state"
 	"github.com/ShyftNetwork/go-empyrean/core/types"
+	"github.com/ShyftNetwork/go-empyrean/crypto"
 	"github.com/ShyftNetwork/go-empyrean/params"
 	"github.com/ShyftNetwork/go-empyrean/rlp"
-	mapset "github.com/deckarep/golang-set"
+	"github.com/deckarep/golang-set"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -530,11 +531,18 @@ func (ethash *Ethash) verifySeal(chain consensus.ChainReader, header *types.Head
 	)
 	// If fast-but-heavy PoW verification was requested, use an ethash dataset
 
+	signature := header.Extra[len(header.Extra)-71]
+	fmt.Printf("signature - extracted from header extra: %+v\n", signature)
+
 	extra := header.Extra[:len(header.Extra)-71]
+
 	newHeader := types.CopyHeader(header)
 	newHeader.Extra = extra
 
 	sealHash := ethash.SealHash(newHeader).Bytes()
+	addr, _ := crypto.Ecrecover(sealHash, signature)
+	fmt.Printf("Public Address - ECRecover %+v\n", addr.)
+
 	if fulldag {
 		dataset := ethash.dataset(number, true)
 		if dataset.generated() {

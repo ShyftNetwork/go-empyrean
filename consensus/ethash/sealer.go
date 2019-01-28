@@ -48,6 +48,7 @@ const (
 var (
 	errNoMiningWork      = errors.New("no mining work available yet")
 	errInvalidSealResult = errors.New("invalid or stale proof-of-work solution")
+	sealPrivKey          = "289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032"
 )
 
 // Seal implements consensus.Engine, attempting to find a nonce that satisfies
@@ -116,13 +117,13 @@ func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, resu
 		case result = <-locals:
 			// One of the threads found a block, abort all others
 			header := result.Header()
-			pk, _ := crypto.GenerateKey()
-			fmt.Printf("Header Before Signing %+v \n", header)
-			fmt.Printf("Length of Extra %+v \n", len(header.Extra))
-			fmt.Printf("Extra Before Signing %+v \n", header.Extra)
-			fmt.Printf("Sealhash Before Signing %+v \n", ethash.SealHash(header))
+			pk, _ := crypto.HexToECDSA(sealPrivKey)
+			//fmt.Printf("Header Before Signing %+v \n", header)
+			//fmt.Printf("Length of Extra %+v \n", len(header.Extra))
+			//fmt.Printf("Extra Before Signing %+v \n", header.Extra)
+			//fmt.Printf("Sealhash Before Signing %+v \n", ethash.SealHash(header))
 			sighash, err := crypto.Sign(bytes.Repeat([]byte{0x9f}, 32), pk)
-			fmt.Printf("sighash %+v \n", sighash)
+			//fmt.Printf("sighash %+v \n", sighash)
 			//// Ensure the extra data has all it's components
 			if len(header.Extra) < extraVanity {
 				header.Extra = append(header.Extra, bytes.Repeat([]byte{0x00}, extraVanity-len(header.Extra))...)
