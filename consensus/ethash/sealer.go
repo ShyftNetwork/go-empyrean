@@ -29,8 +29,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ShyftNetwork/go-empyrean/crypto"
-
 	"fmt"
 
 	"github.com/ShyftNetwork/go-empyrean/common"
@@ -38,6 +36,7 @@ import (
 	"github.com/ShyftNetwork/go-empyrean/consensus"
 	"github.com/ShyftNetwork/go-empyrean/core/types"
 	"github.com/ShyftNetwork/go-empyrean/log"
+	"github.com/ShyftNetwork/go-empyrean/accounts"
 )
 
 const (
@@ -48,7 +47,6 @@ const (
 var (
 	errNoMiningWork      = errors.New("no mining work available yet")
 	errInvalidSealResult = errors.New("invalid or stale proof-of-work solution")
-	sealPrivKey          = "289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032"
 )
 
 // Seal implements consensus.Engine, attempting to find a nonce that satisfies
@@ -118,8 +116,6 @@ func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, resu
 			// One of the threads found a block, abort all others
 			header := result.Header()
 
-			key, _ := crypto.HexToECDSA(sealPrivKey)
-
 			extra := header.Extra[0:26]
 
 			newHeader := types.CopyHeader(header)
@@ -128,7 +124,9 @@ func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, resu
 			sealHash := ethash.SealHash(newHeader).Bytes()
 
 			//send_message := append(new_msg2, []byte{byte(10)}...)
-			signature, err := crypto.Sign(sealHash, key)
+
+			signer, signFn := ethash.signer, ethash.signFn
+			signature, err := signFn(accounts.Account{Address: signer}, sealHash)
 			if err != nil {
 				fmt.Println("The crypto.Sign err is ", err)
 			}

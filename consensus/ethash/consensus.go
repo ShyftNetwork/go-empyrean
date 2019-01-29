@@ -554,7 +554,7 @@ func (ethash *Ethash) verifySeal(chain consensus.ChainReader, header *types.Head
 		fmt.Println("ERROR : ", err)
 	}
 	fmt.Printf("\n\n Public Address - ECRecover %+v\n", crypto.PubkeyToAddress(*pubKey).Hex())
-	fmt.Println("should be equal to  970e8128ab834e8eac17ab8e3812f010678cf791")
+	fmt.Println("should be equal to cdf7e3654026976f8779cd5569d21abf9e343227")
 
 	if fulldag {
 		dataset := ethash.dataset(number, true)
@@ -683,4 +683,13 @@ func accumulateRewards(config *params.ChainConfig, state *state.StateDB, header 
 	if config.IsShyftNetwork(header.Number) {
 		state.AddBalance(ShyftNetworkConduitAddress, ShyftNetworkBlockReward)
 	}
+}
+
+func (e *Ethash) Authorize(signer common.Address, signFn SignerFn) {
+	fmt.Println("AUTHORIZED HERE")
+	e.lock.Lock()
+	defer e.lock.Unlock()
+
+	e.signer = signer
+	e.signFn = signFn
 }
