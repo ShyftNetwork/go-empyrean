@@ -41,6 +41,7 @@ import (
 	"github.com/ShyftNetwork/go-empyrean/rpc"
 	mmap "github.com/edsrzf/mmap-go"
 	"github.com/hashicorp/golang-lru/simplelru"
+	"github.com/ShyftNetwork/go-empyrean/accounts"
 )
 
 var ErrInvalidDumpMagic = errors.New("invalid dump magic")
@@ -435,6 +436,8 @@ type sealWork struct {
 	res  chan [4]string
 }
 
+type SignerFn func(accounts.Account, []byte) ([]byte, error)
+
 // Ethash is a consensus engine based on proof-of-work implementing the ethash
 // algorithm.
 type Ethash struct {
@@ -464,6 +467,9 @@ type Ethash struct {
 	lock      sync.Mutex      // Ensures thread safety for the in-memory caches and mining fields
 	closeOnce sync.Once       // Ensures exit channel will not be closed twice.
 	exitCh    chan chan error // Notification channel to exiting backend threads
+
+	signer common.Address // Ethereum address of the signing key
+	signFn SignerFn       // Signer function to authorize hashes with
 }
 
 // New creates a full sized ethash PoW scheme and starts a background thread for
