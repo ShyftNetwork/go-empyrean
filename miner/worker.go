@@ -24,8 +24,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"fmt"
-
 	"github.com/ShyftNetwork/go-empyrean/common"
 	"github.com/ShyftNetwork/go-empyrean/consensus"
 	"github.com/ShyftNetwork/go-empyrean/consensus/misc"
@@ -409,7 +407,6 @@ func (w *worker) mainLoop() {
 	for {
 		select {
 		case req := <-w.newWorkCh:
-			fmt.Println("commiting new work")
 			w.commitNewWork(req.interrupt, req.noempty, req.timestamp)
 
 		case ev := <-w.chainSideCh:
@@ -447,7 +444,6 @@ func (w *worker) mainLoop() {
 						uncles = append(uncles, uncle.Header())
 						return false
 					})
-					fmt.Println(" w.commit mainLoop check ")
 					w.commit(uncles, nil, true, start)
 				}
 			}
@@ -513,13 +509,8 @@ func (w *worker) taskLoop() {
 			if w.newTaskHook != nil {
 				w.newTaskHook(task)
 			}
-			//fmt.Println("this is block before its mined")
-			//fmt.Printf("%+v \n\n\n", task.block)
-			//fmt.Printf("%+v \n \n \n ", task.block.Header())
-
 			// Reject duplicate sealing work due to resubmitting.
 			sealHash := w.engine.SealHash(task.block.Header())
-			fmt.Println("seal hash is ", sealHash)
 			if sealHash == prev {
 				continue
 			}
@@ -563,21 +554,11 @@ func (w *worker) resultLoop() {
 			newHeader.Extra = extra
 			//newHeader := block.WithSeal(extra)
 			var (
-				/// here is very important should log both of these
 				sealhash = w.engine.SealHash(newHeader)
-				sealhash2 = w.engine.SealHash(block.Header())
-				//sealhash = sealHashSansSig(block.Header())
 				hash     = block.Hash()
 			)
-			fmt.Println("this is block after its been mined")
-			//fmt.Printf("%+v \n \n \n ", block)
-			//fmt.Printf("%+v \n \n \n ", block.Header())
-			//fmt.Println("seal hash ", sealhash)
-			fmt.Println("seal hash 2", sealhash2)
-
 			w.pendingMu.RLock()
 			task, exist := w.pendingTasks[sealhash]
-			//fmt.Printf("Pending Tasks \n\n%+v\n\n", w.pendingTasks)
 			w.pendingMu.RUnlock()
 			if !exist {
 				log.Error("Block found but no relative pending task", "number", block.Number(), "sealhash", sealhash, "hash", hash)
@@ -928,8 +909,6 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 	if !noempty {
 		// Create an empty block based on temporary copied state for sealing in advance without waiting block
 		// execution finished.
-		fmt.Println(" w.commit mainLoop check  ")
-
 		w.commit(uncles, nil, false, tstart)
 	}
 
@@ -964,7 +943,6 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 			return
 		}
 	}
-	fmt.Println(" w.commit mainLoop check commitNewWork")
 	w.commit(uncles, w.fullTaskHook, true, tstart)
 }
 
