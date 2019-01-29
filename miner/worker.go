@@ -549,12 +549,8 @@ func (w *worker) resultLoop() {
 			if w.chain.HasBlock(block.Hash(), block.NumberU64()) {
 				continue
 			}
-			extra := block.Header().Extra[:len(block.Header().Extra)-71]
-			newHeader := types.CopyHeader(block.Header())
-			newHeader.Extra = extra
-			//newHeader := block.WithSeal(extra)
 			var (
-				sealhash = w.engine.SealHash(newHeader)
+				sealhash = w.engine.SealHash(block.Header())
 				hash     = block.Hash()
 			)
 			w.pendingMu.RLock()

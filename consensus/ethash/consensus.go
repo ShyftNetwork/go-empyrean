@@ -536,12 +536,7 @@ func (ethash *Ethash) verifySeal(chain consensus.ChainReader, header *types.Head
 
 	fmt.Printf("signature - extracted from header extra: %+v\n", signature)
 
-	extra := header.Extra[0:26]
-
-	newHeader := types.CopyHeader(header)
-	newHeader.Extra = extra
-
-	sealHash := ethash.SealHash(newHeader).Bytes()
+	sealHash := ethash.SealHash(header).Bytes()
 	//fmt.Printf("\n\n\nheader is is : %+v", newHeader)
 	fmt.Printf("\n\n\nseal hash is : %+v", sealHash)
 
@@ -638,7 +633,7 @@ func (ethash *Ethash) SealHash(header *types.Header) (hash common.Hash) {
 		header.GasLimit,
 		header.GasUsed,
 		header.Time,
-		header.Extra,
+		header.Extra[0:26],
 	})
 	hasher.Sum(hash[:0])
 	return hash
