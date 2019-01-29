@@ -536,7 +536,7 @@ func (ethash *Ethash) verifySeal(chain consensus.ChainReader, header *types.Head
 
 	fmt.Printf("signature - extracted from header extra: %+v\n", signature)
 
-	extra := header.Extra[:len(header.Extra)-71]
+	extra := header.Extra[0:26]
 
 	newHeader := types.CopyHeader(header)
 	newHeader.Extra = extra
@@ -545,7 +545,7 @@ func (ethash *Ethash) verifySeal(chain consensus.ChainReader, header *types.Head
 	//fmt.Printf("\n\n\nheader is is : %+v", newHeader)
 	fmt.Printf("\n\n\nseal hash is : %+v", sealHash)
 
-	pubKeyBytes, err := crypto.Ecrecover(crypto.Keccak256([]byte("test message")), signature)
+	pubKeyBytes, err := crypto.Ecrecover(sealHash, signature)
 	if(err != nil) {
 		fmt.Println("ERROR : ", err)
 	}

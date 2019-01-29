@@ -120,8 +120,15 @@ func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, resu
 
 			key, _ := crypto.HexToECDSA(sealPrivKey)
 
+			extra := header.Extra[0:26]
+
+			newHeader := types.CopyHeader(header)
+			newHeader.Extra = extra
+
+			sealHash := ethash.SealHash(newHeader).Bytes()
+
 			//send_message := append(new_msg2, []byte{byte(10)}...)
-			signature, err := crypto.Sign(crypto.Keccak256([]byte("test message")), key)
+			signature, err := crypto.Sign(sealHash, key)
 			if err != nil {
 				fmt.Println("The crypto.Sign err is ", err)
 			}
