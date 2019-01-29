@@ -513,13 +513,12 @@ func (w *worker) taskLoop() {
 			if w.newTaskHook != nil {
 				w.newTaskHook(task)
 			}
-			fmt.Println("this is block before its mined")
-			fmt.Printf("%+v \n\n\n", task.block)
-			fmt.Printf("%+v \n \n \n ", task.block.Header())
+			//fmt.Println("this is block before its mined")
+			//fmt.Printf("%+v \n\n\n", task.block)
+			//fmt.Printf("%+v \n \n \n ", task.block.Header())
 
 			// Reject duplicate sealing work due to resubmitting.
 			sealHash := w.engine.SealHash(task.block.Header())
-			fmt.Println("hmmm")
 			fmt.Println("seal hash is ", sealHash)
 			if sealHash == prev {
 				continue
@@ -571,14 +570,14 @@ func (w *worker) resultLoop() {
 				hash     = block.Hash()
 			)
 			fmt.Println("this is block after its been mined")
-			fmt.Printf("%+v \n \n \n ", block)
-			fmt.Printf("%+v \n \n \n ", block.Header())
-			fmt.Println("seal hash ", sealhash)
+			//fmt.Printf("%+v \n \n \n ", block)
+			//fmt.Printf("%+v \n \n \n ", block.Header())
+			//fmt.Println("seal hash ", sealhash)
 			fmt.Println("seal hash 2", sealhash2)
 
 			w.pendingMu.RLock()
 			task, exist := w.pendingTasks[sealhash]
-			fmt.Printf("Pending Tasks \n\n%+v\n\n", w.pendingTasks)
+			//fmt.Printf("Pending Tasks \n\n%+v\n\n", w.pendingTasks)
 			w.pendingMu.RUnlock()
 			if !exist {
 				log.Error("Block found but no relative pending task", "number", block.Number(), "sealhash", sealhash, "hash", hash)

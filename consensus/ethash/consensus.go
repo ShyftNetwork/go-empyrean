@@ -531,7 +531,9 @@ func (ethash *Ethash) verifySeal(chain consensus.ChainReader, header *types.Head
 	)
 	// If fast-but-heavy PoW verification was requested, use an ethash dataset
 
-	signature := header.Extra[len(header.Extra)-71]
+	signature := header.Extra[len(header.Extra)-65:len(header.Extra)]
+	fmt.Printf("\n\n\n signature in verify seal is is : %+v", signature)
+
 	fmt.Printf("signature - extracted from header extra: %+v\n", signature)
 
 	extra := header.Extra[:len(header.Extra)-71]
@@ -540,8 +542,19 @@ func (ethash *Ethash) verifySeal(chain consensus.ChainReader, header *types.Head
 	newHeader.Extra = extra
 
 	sealHash := ethash.SealHash(newHeader).Bytes()
-	addr, _ := crypto.Ecrecover(sealHash, signature)
-	fmt.Printf("Public Address - ECRecover %+v\n", addr.)
+	//fmt.Printf("\n\n\nheader is is : %+v", newHeader)
+	fmt.Printf("\n\n\nseal hash is : %+v", sealHash)
+
+	pubKeyBytes, err := crypto.Ecrecover(crypto.Keccak256([]byte("test message")), signature)
+	if(err != nil) {
+		fmt.Println("ERROR : ", err)
+	}
+	pubKey,err := crypto.UnmarshalPubkey(pubKeyBytes)
+	if(err != nil) {
+		fmt.Println("ERROR : ", err)
+	}
+	fmt.Printf("\n\n Public Address - ECRecover %+v\n", crypto.PubkeyToAddress(*pubKey).Hex())
+	fmt.Println("should be equal to  970e8128ab834e8eac17ab8e3812f010678cf791")
 
 	if fulldag {
 		dataset := ethash.dataset(number, true)
@@ -565,7 +578,7 @@ func (ethash *Ethash) verifySeal(chain consensus.ChainReader, header *types.Head
 		if ethash.config.PowMode == ModeTest {
 			size = 32 * 1024
 		}
-		fmt.Printf("Header on line 554 %+v\n\n\n", header)
+		//fmt.Printf("Header on line 554 %+v\n\n\n", header)
 
 		digest, result = hashimotoLight(size, cache.cache, sealHash, header.Nonce.Uint64())
 

@@ -117,30 +117,39 @@ func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, resu
 		case result = <-locals:
 			// One of the threads found a block, abort all others
 			header := result.Header()
-			pk, _ := crypto.HexToECDSA(sealPrivKey)
+
+			key, _ := crypto.HexToECDSA(sealPrivKey)
+
+			//send_message := append(new_msg2, []byte{byte(10)}...)
+			signature, err := crypto.Sign(crypto.Keccak256([]byte("test message")), key)
+			if err != nil {
+				fmt.Println("The crypto.Sign err is ", err)
+			}
+
+			//fmt.Printf("\n\n\n public key prior %+v", crypto.PubkeyToAddress(publicKey))
 			//fmt.Printf("Header Before Signing %+v \n", header)
 			//fmt.Printf("Length of Extra %+v \n", len(header.Extra))
 			//fmt.Printf("Extra Before Signing %+v \n", header.Extra)
 			//fmt.Printf("Sealhash Before Signing %+v \n", ethash.SealHash(header))
-			sighash, err := crypto.Sign(bytes.Repeat([]byte{0x9f}, 32), pk)
-			//fmt.Printf("sighash %+v \n", sighash)
+
+			fmt.Printf("sighash is in sealer %+v \n", signature)
 			//// Ensure the extra data has all it's components
 			if len(header.Extra) < extraVanity {
 				header.Extra = append(header.Extra, bytes.Repeat([]byte{0x00}, extraVanity-len(header.Extra))...)
 			}
 			header.Extra = header.Extra[:extraVanity]
-			header.Extra = append(header.Extra[:32], sighash...)
+			header.Extra = append(header.Extra[:32], signature...)
 
-			fmt.Println("Length of sig hash is")
-			fmt.Println(len(sighash))
+			//fmt.Println("Length of sig hash is")
+			//fmt.Println(len(signature))
 			// type SignerFn func(accounts.Account, []byte) ([]byte, error)
 			//sighash, err := signFn(accounts.Account{Address: signer}, sigHash(header).Bytes())
 
 			if err != nil {
 				fmt.Println("LOG!!!", err)
 			}
-			fmt.Printf("header extra \n \n  %+v", header.Extra)
-			copy(header.Extra[len(header.Extra)-extraSeal:], sighash)
+			//fmt.Printf("header extra \n \n  %+v", header.Extra)
+			copy(header.Extra[len(header.Extra)-extraSeal:], signature)
 			fmt.Printf("Length of Extra After Sig %+v \n", len(header.Extra))
 			fmt.Printf("Extra After Signing %+v \n", header.Extra)
 			fmt.Printf("Actual Length of Extra After Sig %+v \n", len(result.Header().Extra))
@@ -177,7 +186,7 @@ func (ethash *Ethash) mine(block *types.Block, id int, seed uint64, abort chan s
 		number  = header.Number.Uint64()
 		dataset = ethash.dataset(number, false)
 	)
-	fmt.Printf("Header on line 179 sealer %+v\n\n\n", header)
+	//fmt.Printf("Header on line 179 sealer %+v\n\n\n", header)
 	// Start generating random nonces until we abort or find a good one
 	var (
 		attempts = int64(0)
@@ -205,7 +214,7 @@ search:
 			digest, result := hashimotoFull(dataset.dataset, hash, nonce)
 			if new(big.Int).SetBytes(result).Cmp(target) <= 0 {
 				// Correct nonce found, create a new header with it
-				fmt.Printf("header extra data %+v \n", header.Extra)
+				//fmt.Printf("header extra data %+v \n", header.Extra)
 
 				header = types.CopyHeader(header)
 				header.Nonce = types.EncodeNonce(nonce)
