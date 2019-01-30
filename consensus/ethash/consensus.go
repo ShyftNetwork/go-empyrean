@@ -250,8 +250,6 @@ func (ethash *Ethash) VerifyUncles(chain consensus.ChainReader, block *types.Blo
 // See YP section 4.3.4. "Block Header Validity"
 func (ethash *Ethash) verifyHeader(chain consensus.ChainReader, header, parent *types.Header, uncle bool, seal bool) error {
 	// Ensure that the header's extra-data section is of a reasonable size
-	fmt.Printf("header --> at Verify %+v \n", header)
-	fmt.Printf("header extra length --> at Verify %+v \n", len(header.Extra))
 	if uint64(len(header.Extra)) != params.MaximumExtraDataSize {
 		return fmt.Errorf("extra-data is not 97 bytes: %d != %d", len(header.Extra), params.MaximumExtraDataSize)
 	}
@@ -532,13 +530,8 @@ func (ethash *Ethash) verifySeal(chain consensus.ChainReader, header *types.Head
 	// If fast-but-heavy PoW verification was requested, use an ethash dataset
 
 	signature := header.Extra[len(header.Extra)-65:len(header.Extra)]
-	fmt.Printf("\n\n\n signature in verify seal is is : %+v", signature)
-
-	fmt.Printf("signature - extracted from header extra: %+v\n", signature)
 
 	sealHash := ethash.SealHash(header).Bytes()
-	//fmt.Printf("\n\n\nheader is is : %+v", newHeader)
-	fmt.Printf("\n\n\nseal hash is : %+v", sealHash)
 
 	pubKeyBytes, err := crypto.Ecrecover(sealHash, signature)
 	if(err != nil) {
@@ -554,7 +547,6 @@ func (ethash *Ethash) verifySeal(chain consensus.ChainReader, header *types.Head
 	if fulldag {
 		dataset := ethash.dataset(number, true)
 		if dataset.generated() {
-			fmt.Printf("Header on line 535 %+v\n\n\n", header)
 			digest, result = hashimotoFull(dataset.dataset, sealHash, header.Nonce.Uint64())
 
 			// Datasets are unmapped in a finalizer. Ensure that the dataset stays alive
@@ -573,7 +565,6 @@ func (ethash *Ethash) verifySeal(chain consensus.ChainReader, header *types.Head
 		if ethash.config.PowMode == ModeTest {
 			size = 32 * 1024
 		}
-		//fmt.Printf("Header on line 554 %+v\n\n\n", header)
 
 		digest, result = hashimotoLight(size, cache.cache, sealHash, header.Nonce.Uint64())
 
@@ -607,7 +598,6 @@ func (ethash *Ethash) Prepare(chain consensus.ChainReader, header *types.Header)
 // Finalize implements consensus.Engine, accumulating the block and uncle rewards,
 // setting the final state and assembling the block.
 func (ethash *Ethash) Finalize(chain consensus.ChainReader, header *types.Header, state *state.StateDB, txs []*types.Transaction, uncles []*types.Header, receipts []*types.Receipt) (*types.Block, error) {
-	fmt.Println("in finalize function -----------------   ")
 	// Accumulate any block and uncle rewards and commit the final state root
 	accumulateRewards(chain.Config(), state, header, uncles)
 	header.Root = state.IntermediateRoot(chain.Config().IsEIP158(header.Number))
@@ -681,7 +671,6 @@ func accumulateRewards(config *params.ChainConfig, state *state.StateDB, header 
 }
 
 func (e *Ethash) Authorize(signer common.Address, signFn SignerFn) {
-	fmt.Println("AUTHORIZED HERE")
 	e.lock.Lock()
 	defer e.lock.Unlock()
 

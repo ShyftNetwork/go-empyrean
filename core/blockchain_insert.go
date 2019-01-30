@@ -19,8 +19,6 @@ package core
 import (
 	"time"
 
-	"fmt"
-
 	"github.com/ShyftNetwork/go-empyrean/common"
 	"github.com/ShyftNetwork/go-empyrean/common/mclock"
 	"github.com/ShyftNetwork/go-empyrean/core/types"
@@ -110,7 +108,6 @@ func (it *insertIterator) next() (*types.Block, error) {
 
 	// one of these is errInvalidMixDigest
 	if err := <-it.results; err != nil {
-		fmt.Println("ERORRRRR ", err)
 		return it.chain[it.index], err
 	}
 	return it.chain[it.index], it.validator.ValidateBody(it.chain[it.index])
