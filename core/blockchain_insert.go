@@ -105,8 +105,6 @@ func (it *insertIterator) next() (*types.Block, error) {
 		return nil, nil
 	}
 	it.index++
-
-	// one of these is errInvalidMixDigest
 	if err := <-it.results; err != nil {
 		return it.chain[it.index], err
 	}
