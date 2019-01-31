@@ -23,10 +23,11 @@ func (c Config) MarshalTOML() (interface{}, error) {
 		NetworkId               uint64
 		SyncMode                downloader.SyncMode
 		NoPruning               bool
-		LightServ               int  `toml:",omitempty"`
-		LightPeers              int  `toml:",omitempty"`
-		SkipBcVersionCheck      bool `toml:"-"`
-		DatabaseHandles         int  `toml:"-"`
+		Whitelist               map[uint64]common.Hash `toml:"-"`
+		LightServ               int                    `toml:",omitempty"`
+		LightPeers              int                    `toml:",omitempty"`
+		SkipBcVersionCheck      bool                   `toml:"-"`
+		DatabaseHandles         int                    `toml:"-"`
 		DatabaseCache           int
 		TrieCleanCache          int
 		TrieDirtyCache          int
@@ -47,12 +48,15 @@ func (c Config) MarshalTOML() (interface{}, error) {
 		DocRoot                 string `toml:"-"`
 		EWASMInterpreter        string
 		EVMInterpreter          string
+		ConstantinopleOverride  *big.Int
+		Authash                 bool `toml:",omitempty"`
 	}
 	var enc Config
 	enc.Genesis = c.Genesis
 	enc.NetworkId = c.NetworkId
 	enc.SyncMode = c.SyncMode
 	enc.NoPruning = c.NoPruning
+	enc.Whitelist = c.Whitelist
 	enc.LightServ = c.LightServ
 	enc.LightPeers = c.LightPeers
 	enc.SkipBcVersionCheck = c.SkipBcVersionCheck
@@ -77,6 +81,8 @@ func (c Config) MarshalTOML() (interface{}, error) {
 	enc.DocRoot = c.DocRoot
 	enc.EWASMInterpreter = c.EWASMInterpreter
 	enc.EVMInterpreter = c.EVMInterpreter
+	enc.ConstantinopleOverride = c.ConstantinopleOverride
+	enc.Authash = c.Authash
 	return &enc, nil
 }
 
@@ -87,10 +93,11 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 		NetworkId               *uint64
 		SyncMode                *downloader.SyncMode
 		NoPruning               *bool
-		LightServ               *int  `toml:",omitempty"`
-		LightPeers              *int  `toml:",omitempty"`
-		SkipBcVersionCheck      *bool `toml:"-"`
-		DatabaseHandles         *int  `toml:"-"`
+		Whitelist               map[uint64]common.Hash `toml:"-"`
+		LightServ               *int                   `toml:",omitempty"`
+		LightPeers              *int                   `toml:",omitempty"`
+		SkipBcVersionCheck      *bool                  `toml:"-"`
+		DatabaseHandles         *int                   `toml:"-"`
 		DatabaseCache           *int
 		TrieCleanCache          *int
 		TrieDirtyCache          *int
@@ -111,6 +118,8 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 		DocRoot                 *string `toml:"-"`
 		EWASMInterpreter        *string
 		EVMInterpreter          *string
+		ConstantinopleOverride  *big.Int
+		Authash                 *bool `toml:",omitempty"`
 	}
 	var dec Config
 	if err := unmarshal(&dec); err != nil {
@@ -127,6 +136,9 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	}
 	if dec.NoPruning != nil {
 		c.NoPruning = *dec.NoPruning
+	}
+	if dec.Whitelist != nil {
+		c.Whitelist = dec.Whitelist
 	}
 	if dec.LightServ != nil {
 		c.LightServ = *dec.LightServ
@@ -199,6 +211,12 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	}
 	if dec.EVMInterpreter != nil {
 		c.EVMInterpreter = *dec.EVMInterpreter
+	}
+	if dec.ConstantinopleOverride != nil {
+		c.ConstantinopleOverride = dec.ConstantinopleOverride
+	}
+	if dec.Authash != nil {
+		c.Authash = *dec.Authash
 	}
 	return nil
 }

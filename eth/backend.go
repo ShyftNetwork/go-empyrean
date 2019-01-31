@@ -517,7 +517,7 @@ func (s *Ethereum) StartMining(threads int) error {
 			}
 			clique.Authorize(eb, wallet.SignHash)
 		}
-
+		fmt.Printf("eb : %+v \n", eb.Hex())
 		if ethash, ok := s.engine.(*ethash.Ethash); ok {
 			wallet, err := s.accountManager.Find(accounts.Account{Address: eb})
 			if wallet == nil || err != nil {

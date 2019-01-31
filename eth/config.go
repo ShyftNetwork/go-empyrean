@@ -37,11 +37,13 @@ import (
 var DefaultConfig = Config{
 	SyncMode: downloader.FastSync,
 	Ethash: ethash.Config{
-		CacheDir:       "ethash",
-		CachesInMem:    2,
-		CachesOnDisk:   3,
-		DatasetsInMem:  1,
-		DatasetsOnDisk: 2,
+		CacheDir:             "ethash",
+		CachesInMem:          2,
+		CachesOnDisk:         3,
+		DatasetsInMem:        1,
+		DatasetsOnDisk:       2,
+		BlockSignersContract: "",
+		AuthorizedSigners:    nil,
 	},
 	NetworkId:      1,
 	LightPeers:     100,
@@ -134,6 +136,9 @@ type Config struct {
 
 	// Constantinople block override (TODO: remove after the fork)
 	ConstantinopleOverride *big.Int
+
+	// Authash Consensus Algorithm
+	Authash bool `toml:",omitempty"`
 }
 
 type configMarshaling struct {

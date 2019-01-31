@@ -82,6 +82,7 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.LightPeersFlag,
 			utils.LightKDFFlag,
 			utils.WhitelistFlag,
+			utils.AuthashFlag,
 		},
 	},
 	{
@@ -100,6 +101,8 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.EthashDatasetDirFlag,
 			utils.EthashDatasetsInMemoryFlag,
 			utils.EthashDatasetsOnDiskFlag,
+			utils.EthashBlockSignersContractFlag,
+			utils.EthashBlockSignersContractFlag,
 		},
 	},
 	//{

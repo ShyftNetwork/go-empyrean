@@ -33,6 +33,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/ShyftNetwork/go-empyrean/accounts"
 	"github.com/ShyftNetwork/go-empyrean/common"
 	"github.com/ShyftNetwork/go-empyrean/consensus"
 	"github.com/ShyftNetwork/go-empyrean/core/types"
@@ -41,7 +42,6 @@ import (
 	"github.com/ShyftNetwork/go-empyrean/rpc"
 	mmap "github.com/edsrzf/mmap-go"
 	"github.com/hashicorp/golang-lru/simplelru"
-	"github.com/ShyftNetwork/go-empyrean/accounts"
 )
 
 var ErrInvalidDumpMagic = errors.New("invalid dump magic")
@@ -51,7 +51,7 @@ var (
 	two256 = new(big.Int).Exp(big.NewInt(2), big.NewInt(256), big.NewInt(0))
 
 	// sharedEthash is a full instance that can be shared between multiple users.
-	sharedEthash = New(Config{"", 3, 0, "", 1, 0, ModeNormal}, nil, false)
+	sharedEthash = New(Config{"", 3, 0, "", 1, 0, ModeNormal, "", nil}, nil, false)
 
 	// algorithmRevision is the data structure version used for file naming.
 	algorithmRevision = 23
@@ -404,6 +404,10 @@ type Config struct {
 	DatasetsInMem  int
 	DatasetsOnDisk int
 	PowMode        Mode
+	// Block Signers - is the contract address for the block signers contract
+	BlockSignersContract string
+	// Authorized Signers - provides an alternative for testing Authash and is a slice of public keys for block signers
+	AuthorizedSigners []string
 }
 
 // sealTask wraps a seal block with relative result channel for remote sealer thread.

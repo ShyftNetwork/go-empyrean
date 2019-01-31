@@ -194,6 +194,11 @@ var (
 		Name:  "whitelist",
 		Usage: "Comma separated block number-to-hash mappings to enforce (<number>=<hash>)",
 	}
+	AuthashFlag = cli.BoolFlag{
+		Name:  "authash",
+		Usage: "Disable authash consensus - if enabled Signers must be available via contract address or flag",
+	}
+
 	// Dashboard settings
 	DashboardEnabledFlag = cli.BoolFlag{
 		Name:  metrics.DashboardEnabledFlag,
@@ -243,6 +248,14 @@ var (
 		Name:  "ethash.dagsondisk",
 		Usage: "Number of recent ethash mining DAGs to keep on disk (1+GB each)",
 		Value: eth.DefaultConfig.Ethash.DatasetsOnDisk,
+	}
+	EthashAuthorizedSignersFlag = cli.StringFlag{
+		Name:  "ethash.authorizedsigners",
+		Usage: "Comma separated public keys of the authorized block signers - used for Authash consensus testing when a BlockSigners Contract is not deployed",
+	}
+	EthashBlockSignersContractFlag = cli.StringFlag{
+		Name:  "ethash.blocksignerscontract",
+		Usage: "Designate the BlockSignersContractAddress - used for the Authash Consensus Algorithm - used alongside the Authhash Flag",
 	}
 	// Transaction pool settings
 	TxPoolLocalsFlag = cli.StringFlag{
@@ -1101,6 +1114,18 @@ func setEthash(ctx *cli.Context, cfg *eth.Config) {
 	}
 }
 
+func setAutHash(ctx *cli.Context, cfg *eth.Config) {
+	if ctx.GlobalBool(AuthashFlag.Name) {
+		cfg.Authash = true
+		if ctx.GlobalIsSet(EthashBlockSignersContractFlag.Name) {
+			cfg.Ethash.BlockSignersContract = ctx.GlobalString(EthashBlockSignersContractFlag.Name)
+		}
+		if ctx.GlobalIsSet(EthashAuthorizedSignersFlag.Name) {
+			cfg.Ethash.AuthorizedSigners = splitAndTrim(ctx.GlobalString(EthashAuthorizedSignersFlag.Name))
+		}
+	}
+}
+
 func setWhitelist(ctx *cli.Context, cfg *eth.Config) {
 	whitelist := ctx.GlobalString(WhitelistFlag.Name)
 	if whitelist == "" {
@@ -1189,6 +1214,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 	setGPO(ctx, &cfg.GPO)
 	setTxPool(ctx, &cfg.TxPool)
 	setEthash(ctx, cfg)
+	setAutHash(ctx, cfg)
 	setWhitelist(ctx, cfg)
 
 	if ctx.GlobalIsSet(SyncModeFlag.Name) {
@@ -1220,7 +1246,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 		Fatalf("--%s must be either 'full' or 'archive'", GCModeFlag.Name)
 	}
 	cfg.NoPruning = ctx.GlobalString(GCModeFlag.Name) == "archive"
-
+	cfg.Authash = ctx.GlobalBool(AuthashFlag.Name)
 	if ctx.GlobalIsSet(CacheFlag.Name) || ctx.GlobalIsSet(CacheTrieFlag.Name) {
 		cfg.TrieCleanCache = ctx.GlobalInt(CacheFlag.Name) * ctx.GlobalInt(CacheTrieFlag.Name) / 100
 	}
