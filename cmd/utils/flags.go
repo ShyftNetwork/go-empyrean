@@ -1115,13 +1115,16 @@ func setEthash(ctx *cli.Context, cfg *eth.Config) {
 }
 
 func setAutHash(ctx *cli.Context, cfg *eth.Config) {
-	if ctx.GlobalBool(AuthashFlag.Name) {
-		cfg.Authash = true
+	if cfg.Authash {
 		if ctx.GlobalIsSet(EthashBlockSignersContractFlag.Name) {
 			cfg.Ethash.BlockSignersContract = ctx.GlobalString(EthashBlockSignersContractFlag.Name)
 		}
 		if ctx.GlobalIsSet(EthashAuthorizedSignersFlag.Name) {
 			cfg.Ethash.AuthorizedSigners = splitAndTrim(ctx.GlobalString(EthashAuthorizedSignersFlag.Name))
+		}
+		if cfg.Ethash.BlockSignersContract == "" && len(cfg.Ethash.AuthorizedSigners) == 0 {
+			log.Info("You Specified - Consensus Authash - without configuring Authorized Signers or the BlockSigners Contract Address")
+			os.Exit(22)
 		}
 	}
 }
@@ -1246,7 +1249,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 		Fatalf("--%s must be either 'full' or 'archive'", GCModeFlag.Name)
 	}
 	cfg.NoPruning = ctx.GlobalString(GCModeFlag.Name) == "archive"
-	cfg.Authash = ctx.GlobalBool(AuthashFlag.Name)
+	//cfg.Authash = ctx.GlobalBool(AuthashFlag.Name)
 	if ctx.GlobalIsSet(CacheFlag.Name) || ctx.GlobalIsSet(CacheTrieFlag.Name) {
 		cfg.TrieCleanCache = ctx.GlobalInt(CacheFlag.Name) * ctx.GlobalInt(CacheTrieFlag.Name) / 100
 	}

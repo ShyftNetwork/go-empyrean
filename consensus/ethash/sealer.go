@@ -31,12 +31,12 @@ import (
 
 	"fmt"
 
+	"github.com/ShyftNetwork/go-empyrean/accounts"
 	"github.com/ShyftNetwork/go-empyrean/common"
 	"github.com/ShyftNetwork/go-empyrean/common/hexutil"
 	"github.com/ShyftNetwork/go-empyrean/consensus"
 	"github.com/ShyftNetwork/go-empyrean/core/types"
 	"github.com/ShyftNetwork/go-empyrean/log"
-	"github.com/ShyftNetwork/go-empyrean/accounts"
 )
 
 const (
@@ -114,6 +114,7 @@ func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, resu
 			close(abort)
 		case result = <-locals:
 			// One of the threads found a block, abort all others
+			fmt.Printf("IN SEAL ... %+v\n", ethash.config)
 			header := result.Header()
 
 			extra := header.Extra[0:26]
