@@ -321,12 +321,14 @@ func CreateConsensusEngine(ctx *node.ServiceContext, chainConfig *params.ChainCo
 	default:
 		log.Warn("Ethash used in POW")
 		engine := ethash.New(ethash.Config{
-			CacheDir:       ctx.ResolvePath(config.CacheDir),
-			CachesInMem:    config.CachesInMem,
-			CachesOnDisk:   config.CachesOnDisk,
-			DatasetDir:     config.DatasetDir,
-			DatasetsInMem:  config.DatasetsInMem,
-			DatasetsOnDisk: config.DatasetsOnDisk,
+			CacheDir:             ctx.ResolvePath(config.CacheDir),
+			CachesInMem:          config.CachesInMem,
+			CachesOnDisk:         config.CachesOnDisk,
+			DatasetDir:           config.DatasetDir,
+			DatasetsInMem:        config.DatasetsInMem,
+			DatasetsOnDisk:       config.DatasetsOnDisk,
+			BlockSignersContract: config.BlockSignersContract,
+			AuthorizedSigners:    config.AuthorizedSigners,
 		}, notify, noverify)
 		engine.SetThreads(-1) // Disable CPU mining
 		return engine
@@ -488,7 +490,6 @@ func (s *Ethereum) StartMining(threads int) error {
 	type threaded interface {
 		SetThreads(threads int)
 	}
-	fmt.Printf("CONFIG  %+v\n", s.config.Ethash)
 	if th, ok := s.engine.(threaded); ok {
 		log.Info("Updated mining threads", "threads", threads)
 		if threads == 0 {

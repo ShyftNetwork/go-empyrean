@@ -114,33 +114,35 @@ func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, resu
 			close(abort)
 		case result = <-locals:
 			// One of the threads found a block, abort all others
-			fmt.Printf("IN SEAL ... %+v\n", ethash.config)
 			header := result.Header()
 
-			extra := header.Extra[0:26]
+			powMine := ethash.config.BlockSignersContract == "" && len(ethash.config.AuthorizedSigners) == 0
 
-			newHeader := types.CopyHeader(header)
-			newHeader.Extra = extra
+			if !powMine {
+				extra := header.Extra[0:26]
 
-			sealHash := ethash.SealHash(newHeader).Bytes()
+				newHeader := types.CopyHeader(header)
+				newHeader.Extra = extra
 
-			//send_message := append(new_msg2, []byte{byte(10)}...)
+				sealHash := ethash.SealHash(newHeader).Bytes()
 
-			signer, signFn := ethash.signer, ethash.signFn
-			signature, err := signFn(accounts.Account{Address: signer}, sealHash)
-			if err != nil {
-				fmt.Println("The crypto.Sign err is ", err)
+				//send_message := append(new_msg2, []byte{byte(10)}...)
+
+				signer, signFn := ethash.signer, ethash.signFn
+				signature, err := signFn(accounts.Account{Address: signer}, sealHash)
+				if err != nil {
+					fmt.Println("The crypto.Sign err is ", err)
+				}
+
+				//// Ensure the extra data has all it's components
+				if len(header.Extra) < extraVanity {
+					header.Extra = append(header.Extra, bytes.Repeat([]byte{0x00}, extraVanity-len(header.Extra))...)
+				}
+				header.Extra = header.Extra[:extraVanity]
+				header.Extra = append(header.Extra[:32], signature...)
+
+				copy(header.Extra[len(header.Extra)-extraSeal:], signature)
 			}
-
-			//// Ensure the extra data has all it's components
-			if len(header.Extra) < extraVanity {
-				header.Extra = append(header.Extra, bytes.Repeat([]byte{0x00}, extraVanity-len(header.Extra))...)
-			}
-			header.Extra = header.Extra[:extraVanity]
-			header.Extra = append(header.Extra[:32], signature...)
-
-			copy(header.Extra[len(header.Extra)-extraSeal:], signature)
-
 			select {
 
 			case results <- block.WithSeal(header):

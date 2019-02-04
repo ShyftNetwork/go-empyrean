@@ -15,6 +15,7 @@
 */**/*dapps*
 build/_vendor/pkg
 ethash/
+ethash2/
 #*
 .#*
 *#
@@ -50,6 +51,7 @@ profile.cov
 **/yarn-error.log
 # Remove Shyft Data
 shyftData/*
+shyftData2/*
 shyft-cli/web3/token_test/node_modules
 shyft-cli/web3/transfer-through-master/node_modules
 shyft-cli/web3/transfer-through-master/build
@@ -66,3 +68,4 @@ build/_workspace/*
 
 ./shyft-config/keystore/
 ./shyft-config/unlockPasswords.txt
+/ethash

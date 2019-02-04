@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"math/big"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/ShyftNetwork/go-empyrean/common"
@@ -70,15 +71,16 @@ var (
 // codebase, inherently breaking if the engine is swapped out. Please put common
 // error types into the consensus package.
 var (
-	errLargeBlockTime    = errors.New("timestamp too big")
-	errZeroBlockTime     = errors.New("timestamp equals parent's")
-	errTooManyUncles     = errors.New("too many uncles")
-	errDuplicateUncle    = errors.New("duplicate uncle")
-	errUncleIsAncestor   = errors.New("uncle is ancestor")
-	errDanglingUncle     = errors.New("uncle's parent is not ancestor")
-	errInvalidDifficulty = errors.New("non-positive difficulty")
-	errInvalidMixDigest  = errors.New("invalid mix digest")
-	errInvalidPoW        = errors.New("invalid proof-of-work")
+	errLargeBlockTime          = errors.New("timestamp too big")
+	errZeroBlockTime           = errors.New("timestamp equals parent's")
+	errTooManyUncles           = errors.New("too many uncles")
+	errDuplicateUncle          = errors.New("duplicate uncle")
+	errUncleIsAncestor         = errors.New("uncle is ancestor")
+	errDanglingUncle           = errors.New("uncle's parent is not ancestor")
+	errInvalidDifficulty       = errors.New("non-positive difficulty")
+	errInvalidMixDigest        = errors.New("invalid mix digest")
+	errInvalidPoW              = errors.New("invalid proof-of-work")
+	errInvalidAuthashSignature = errors.New("the authash blockheader signature is invalid")
 )
 
 var (
@@ -528,22 +530,31 @@ func (ethash *Ethash) verifySeal(chain consensus.ChainReader, header *types.Head
 		result []byte
 	)
 	// If fast-but-heavy PoW verification was requested, use an ethash dataset
+	powMine := ethash.config.BlockSignersContract == "" && len(ethash.config.AuthorizedSigners) == 0
 
-	signature := header.Extra[len(header.Extra)-65:len(header.Extra)]
+	var sealHash []byte
+	if !powMine {
+		signature := header.Extra[len(header.Extra)-65 : len(header.Extra)]
 
-	sealHash := ethash.SealHash(header).Bytes()
+		sealHash = ethash.SealHash(header).Bytes()
 
-	pubKeyBytes, err := crypto.Ecrecover(sealHash, signature)
-	if(err != nil) {
-		fmt.Println("ERROR : ", err)
+		pubKeyBytes, err := crypto.Ecrecover(sealHash, signature)
+		if err != nil {
+			fmt.Println("ERROR : ", err)
+		}
+
+		authorized := ethash.isAuthorizedSigner(pubKeyBytes, ethash.config.AuthorizedSigners)
+
+		//authorized := ethash.isAuthorizedSigner(crypto.PubkeyToAddress(*pubKey).String(), ethash.config.AuthorizedSigners)
+		//fmt.Printf("signature pubkey %+v\n", crypto.PubkeyToAddress(*pubKey).String())
+		//fmt.Printf("Authhash signature is %+v\n", authorized)
+		if !authorized {
+			return errInvalidAuthashSignature
+		}
+		//fmt.Printf("\n\n Public Address - ECRecover %+v\n", crypto.PubkeyToAddress(*pubKey).Hex())
+	} else {
+		sealHash = ethash.SealHash(header).Bytes()
 	}
-	pubKey,err := crypto.UnmarshalPubkey(pubKeyBytes)
-	if(err != nil) {
-		fmt.Println("ERROR : ", err)
-	}
-	fmt.Printf("\n\n Public Address - ECRecover %+v\n", crypto.PubkeyToAddress(*pubKey).Hex())
-	fmt.Println("should be equal to cdf7e3654026976f8779cd5569d21abf9e343227")
-
 	if fulldag {
 		dataset := ethash.dataset(number, true)
 		if dataset.generated() {
@@ -582,6 +593,31 @@ func (ethash *Ethash) verifySeal(chain consensus.ChainReader, header *types.Head
 		return errInvalidPoW
 	}
 	return nil
+}
+
+func (ethash *Ethash) authorizedByBlockSignersContract(pubKeyBytes []byte) bool {
+	return false
+}
+
+func (ethash *Ethash) isAuthorizedSigner(pubKeyBytes []byte, signerList []string) bool {
+	if ethash.config.BlockSignersContract == "" {
+		pubKey, err := crypto.UnmarshalPubkey(pubKeyBytes)
+		if err != nil {
+			fmt.Println("ERROR : ", err)
+		}
+		pubKeyString := crypto.PubkeyToAddress(*pubKey).Hex()
+		for _, v := range signerList {
+			if strings.ToLower(v) == strings.ToLower(pubKeyString) {
+				return true
+			}
+		}
+		return false
+	}
+	authorized := ethash.authorizedByBlockSignersContract(pubKeyBytes)
+	if authorized {
+		return true
+	}
+	return false
 }
 
 // Prepare implements consensus.Engine, initializing the difficulty field of a

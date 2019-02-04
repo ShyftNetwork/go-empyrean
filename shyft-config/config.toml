@@ -23,7 +23,6 @@ AuthorizedSigners = ["0x8c2afeecfc769e1125b1d7d4be3f8753fc9b3bbd"]
 NoLocals = false
 Journal = "transactions.rlp"
 Rejournal = 3600000000000
-PriceLimit = 1
 PriceBump = 10
 AccountSlots = 16
 GlobalSlots = 4096
