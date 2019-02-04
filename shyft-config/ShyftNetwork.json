@@ -9,7 +9,7 @@
     "eip160Block": 5,
     "byzantiumBlock": 4,
 	"shyftNetworkBlock": 1,
-    "ethash": {},
+    "ethash": {}
   },
   "nonce": "0x0000000000000042",
   "timestamp": "0x5aaef881",
@@ -37,7 +37,7 @@
     },
     "0x07D899C4aC0c1725C35C5f816e60273B33a964F7" : {
       "balance": "100000000000000000000"
-    },
+    }
   },
   "number": "0x0",
   "gasUsed": "0x0",
