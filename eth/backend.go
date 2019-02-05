@@ -20,6 +20,7 @@ package eth
 import (
 	"errors"
 	"fmt"
+	"github.com/ShyftNetwork/go-empyrean/consensus/authash"
 	"math/big"
 	"runtime"
 	"sync"
@@ -303,9 +304,22 @@ func CreateShyftDB(ctx *node.ServiceContext) (ethdb.SDatabase, error) {
 
 // CreateConsensusEngine creates the required type of consensus engine instance for an Ethereum service
 func CreateConsensusEngine(ctx *node.ServiceContext, chainConfig *params.ChainConfig, config *ethash.Config, notify []string, noverify bool, db ethdb.Database) consensus.Engine {
+
 	// If proof-of-authority is requested, set it up
 	if chainConfig.Clique != nil {
 		return clique.New(chainConfig.Clique, db)
+	}
+	if chainConfig.Authash != nil {
+		return authash.New(ethash.Config{
+			CacheDir:             ctx.ResolvePath(config.CacheDir),
+			CachesInMem:          config.CachesInMem,
+			CachesOnDisk:         config.CachesOnDisk,
+			DatasetDir:           config.DatasetDir,
+			DatasetsInMem:        config.DatasetsInMem,
+			DatasetsOnDisk:       config.DatasetsOnDisk,
+			BlockSignersContract: config.BlockSignersContract,
+			AuthorizedSigners:    config.AuthorizedSigners,
+		}, notify, noverify)
 	}
 	// Otherwise assume proof-of-work
 	switch config.PowMode {
