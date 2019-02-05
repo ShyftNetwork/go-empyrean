@@ -6,7 +6,7 @@ DatabaseCache = 768
 Etherbase = "0x8c2afeecfc769e1125b1d7d4be3f8753fc9b3bbd"
 MinerGasPrice = 18000000000
 EnablePreimageRecording = false
-Authash = false
+Authash = true
 
 [Eth.Ethash]
 CacheDir = "ethash"
