@@ -34,4 +34,7 @@ var (
 	// ErrInvalidNumber is returned if a block's number doesn't equal it's parent's
 	// plus one.
 	ErrInvalidNumber = errors.New("invalid block number")
+
+	// ErrUnauthorizedMiner is returned when a miner is not an authorized signer
+	ErrUnauthorizedMiner = errors.New("miner is not an authorized signer")
 )
