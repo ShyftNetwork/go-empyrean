@@ -111,9 +111,6 @@ func (ethash *Ethash) VerifyHeader(chain consensus.ChainReader, header *types.He
 	if parent == nil {
 		return consensus.ErrUnknownAncestor
 	}
-	if !ethash.checkAuthSigners(strings.ToLower(header.Coinbase.Hex())) {
-		return consensus.ErrUnauthorizedMiner
-	}
 	// Sanity checks passed, do a proper verification
 	return ethash.verifyHeader(chain, header, parent, false, seal)
 }
@@ -277,9 +274,6 @@ func (ethash *Ethash) verifyHeader(chain consensus.ChainReader, header, parent *
 		if header.Time.Cmp(big.NewInt(time.Now().Add(allowedFutureBlockTime).Unix())) > 0 {
 			return consensus.ErrFutureBlock
 		}
-	}
-	if !ethash.checkAuthSigners(strings.ToLower(header.Coinbase.Hex())) {
-		return consensus.ErrUnauthorizedMiner
 	}
 	if header.Time.Cmp(parent.Time) <= 0 {
 		return errZeroBlockTime

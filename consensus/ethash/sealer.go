@@ -115,9 +115,9 @@ func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, resu
 		case result = <-locals:
 			// One of the threads found a block, abort all others
 			header := result.Header()
-
+			fmt.Println("channel result+++++++", result)
 			powMine := ethash.config.BlockSignersContract == "" && len(ethash.config.AuthorizedSigners) == 0
-
+			fmt.Println("POWMINE FLAG", powMine)
 			if !powMine {
 				extra := header.Extra[0:26]
 
