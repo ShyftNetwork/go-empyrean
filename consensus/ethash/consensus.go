@@ -549,7 +549,7 @@ func (ethash *Ethash) verifySeal(chain consensus.ChainReader, header *types.Head
 		//fmt.Printf("signature pubkey %+v\n", crypto.PubkeyToAddress(*pubKey).String())
 		//fmt.Printf("Authhash signature is %+v\n", authorized)
 		if !authorized {
-			return nil
+			return errInvalidAuthashSignature
 		}
 		//fmt.Printf("\n\n Public Address - ECRecover %+v\n", crypto.PubkeyToAddress(*pubKey).Hex())
 	} else {
