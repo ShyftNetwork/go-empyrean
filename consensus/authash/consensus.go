@@ -34,9 +34,11 @@ import (
 	"github.com/ShyftNetwork/go-empyrean/rlp"
 	mapset "github.com/deckarep/golang-set"
 	"golang.org/x/crypto/sha3"
+	"github.com/ShyftNetwork/go-empyrean/crypto"
+	"strings"
 )
 
-// Ethash proof-of-work protocol constants.
+// authash proof-of-work protocol constants.
 var (
 	FrontierBlockReward       = big.NewInt(5e+18) // Block reward in wei for successfully mining a block
 	ByzantiumBlockReward      = big.NewInt(3e+18) // Block reward in wei for successfully mining a block upward from Byzantium
@@ -80,17 +82,22 @@ var (
 	errInvalidPoW        = errors.New("invalid proof-of-work")
 )
 
+var (
+	extraVanity = 32 // Fixed number of extra-data prefix bytes reserved for signer vanity
+	extraSeal   = 65 // Fixed number of extra-data suffix bytes reserved for signer seal
+)
+
 // Author implements consensus.Engine, returning the header's coinbase as the
 // proof-of-work verified author of the block.
-func (ethash *Ethash) Author(header *types.Header) (common.Address, error) {
+func (authash *Authash) Author(header *types.Header) (common.Address, error) {
 	return header.Coinbase, nil
 }
 
 // VerifyHeader checks whether a header conforms to the consensus rules of the
-// stock Ethereum ethash engine.
-func (ethash *Ethash) VerifyHeader(chain consensus.ChainReader, header *types.Header, seal bool) error {
+// stock Ethereum authash engine.
+func (authash *Authash) VerifyHeader(chain consensus.ChainReader, header *types.Header, seal bool) error {
 	// If we're running a full engine faking, accept any input as valid
-	if ethash.config.PowMode == ModeFullFake {
+	if authash.config.PowMode == ModeFullFake {
 		return nil
 	}
 	// Short circuit if the header is known, or it's parent not
@@ -103,15 +110,15 @@ func (ethash *Ethash) VerifyHeader(chain consensus.ChainReader, header *types.He
 		return consensus.ErrUnknownAncestor
 	}
 	// Sanity checks passed, do a proper verification
-	return ethash.verifyHeader(chain, header, parent, false, seal)
+	return authash.verifyHeader(chain, header, parent, false, seal)
 }
 
 // VerifyHeaders is similar to VerifyHeader, but verifies a batch of headers
 // concurrently. The method returns a quit channel to abort the operations and
 // a results channel to retrieve the async verifications.
-func (ethash *Ethash) VerifyHeaders(chain consensus.ChainReader, headers []*types.Header, seals []bool) (chan<- struct{}, <-chan error) {
+func (authash *Authash) VerifyHeaders(chain consensus.ChainReader, headers []*types.Header, seals []bool) (chan<- struct{}, <-chan error) {
 	// If we're running a full engine faking, accept any input as valid
-	if ethash.config.PowMode == ModeFullFake || len(headers) == 0 {
+	if authash.config.PowMode == ModeFullFake || len(headers) == 0 {
 		abort, results := make(chan struct{}), make(chan error, len(headers))
 		for i := 0; i < len(headers); i++ {
 			results <- nil
@@ -135,7 +142,7 @@ func (ethash *Ethash) VerifyHeaders(chain consensus.ChainReader, headers []*type
 	for i := 0; i < workers; i++ {
 		go func() {
 			for index := range inputs {
-				errors[index] = ethash.verifyHeaderWorker(chain, headers, seals, index)
+				errors[index] = authash.verifyHeaderWorker(chain, headers, seals, index)
 				done <- index
 			}
 		}()
@@ -171,7 +178,7 @@ func (ethash *Ethash) VerifyHeaders(chain consensus.ChainReader, headers []*type
 	return abort, errorsOut
 }
 
-func (ethash *Ethash) verifyHeaderWorker(chain consensus.ChainReader, headers []*types.Header, seals []bool, index int) error {
+func (authash *Authash) verifyHeaderWorker(chain consensus.ChainReader, headers []*types.Header, seals []bool, index int) error {
 	var parent *types.Header
 	if index == 0 {
 		parent = chain.GetHeader(headers[0].ParentHash, headers[0].Number.Uint64()-1)
@@ -184,14 +191,14 @@ func (ethash *Ethash) verifyHeaderWorker(chain consensus.ChainReader, headers []
 	if chain.GetHeader(headers[index].Hash(), headers[index].Number.Uint64()) != nil {
 		return nil // known block
 	}
-	return ethash.verifyHeader(chain, headers[index], parent, false, seals[index])
+	return authash.verifyHeader(chain, headers[index], parent, false, seals[index])
 }
 
 // VerifyUncles verifies that the given block's uncles conform to the consensus
-// rules of the stock Ethereum ethash engine.
-func (ethash *Ethash) VerifyUncles(chain consensus.ChainReader, block *types.Block) error {
+// rules of the stock Ethereum authash engine.
+func (authash *Authash) VerifyUncles(chain consensus.ChainReader, block *types.Block) error {
 	// If we're running a full engine faking, accept any input as valid
-	if ethash.config.PowMode == ModeFullFake {
+	if authash.config.PowMode == ModeFullFake {
 		return nil
 	}
 	// Verify that there are at most 2 uncles included in this block
@@ -232,7 +239,7 @@ func (ethash *Ethash) VerifyUncles(chain consensus.ChainReader, block *types.Blo
 		if ancestors[uncle.ParentHash] == nil || uncle.ParentHash == block.ParentHash() {
 			return errDanglingUncle
 		}
-		if err := ethash.verifyHeader(chain, uncle, ancestors[uncle.ParentHash], true, true); err != nil {
+		if err := authash.verifyHeader(chain, uncle, ancestors[uncle.ParentHash], true, true); err != nil {
 			return err
 		}
 	}
@@ -240,9 +247,9 @@ func (ethash *Ethash) VerifyUncles(chain consensus.ChainReader, block *types.Blo
 }
 
 // verifyHeader checks whether a header conforms to the consensus rules of the
-// stock Ethereum ethash engine.
+// stock Ethereum authash engine.
 // See YP section 4.3.4. "Block Header Validity"
-func (ethash *Ethash) verifyHeader(chain consensus.ChainReader, header, parent *types.Header, uncle bool, seal bool) error {
+func (authash *Authash) verifyHeader(chain consensus.ChainReader, header, parent *types.Header, uncle bool, seal bool) error {
 	// Ensure that the header's extra-data section is of a reasonable size
 	if uint64(len(header.Extra)) != params.MaximumExtraDataSize {
 		return fmt.Errorf("extra-data is not 97 bytes: %d != %d", len(header.Extra), params.MaximumExtraDataSize)
@@ -264,7 +271,7 @@ func (ethash *Ethash) verifyHeader(chain consensus.ChainReader, header, parent *
 		return errZeroBlockTime
 	}
 	// Verify the block's difficulty based in it's timestamp and parent's difficulty
-	expected := ethash.CalcDifficulty(chain, header.Time.Uint64(), parent)
+	expected := authash.CalcDifficulty(chain, header.Time.Uint64(), parent)
 
 	if expected.Cmp(header.Difficulty) != 0 {
 		return fmt.Errorf("invalid difficulty: have %v, want %v", header.Difficulty, expected)
@@ -295,7 +302,7 @@ func (ethash *Ethash) verifyHeader(chain consensus.ChainReader, header, parent *
 	}
 	// Verify the engine specific seal securing the block
 	if seal {
-		if err := ethash.VerifySeal(chain, header); err != nil {
+		if err := authash.VerifySeal(chain, header); err != nil {
 			return err
 		}
 	}
@@ -304,16 +311,16 @@ func (ethash *Ethash) verifyHeader(chain consensus.ChainReader, header, parent *
 		return err
 	}
 	//@Shyft this was commented out?
-	if err := misc.VerifyForkHashes(chain.Config(), header, uncle); err != nil {
-		return err
-	}
+	//if err := misc.VerifyForkHashes(chain.Config(), header, uncle); err != nil {
+	//	return err
+	//}
 	return nil
 }
 
 // CalcDifficulty is the difficulty adjustment algorithm. It returns
 // the difficulty that a new block should have when created at time
 // given the parent block's time and difficulty.
-func (ethash *Ethash) CalcDifficulty(chain consensus.ChainReader, time uint64, parent *types.Header) *big.Int {
+func (authash *Authash) CalcDifficulty(chain consensus.ChainReader, time uint64, parent *types.Header) *big.Int {
 	return CalcDifficulty(chain.Config(), time, parent)
 }
 
@@ -491,25 +498,25 @@ func calcDifficultyFrontier(time uint64, parent *types.Header) *big.Int {
 
 // VerifySeal implements consensus.Engine, checking whether the given block satisfies
 // the PoW difficulty requirements.
-func (ethash *Ethash) VerifySeal(chain consensus.ChainReader, header *types.Header) error {
-	return ethash.verifySeal(chain, header, false)
+func (authash *Authash) VerifySeal(chain consensus.ChainReader, header *types.Header) error {
+	return authash.verifySeal(chain, header, false)
 }
 
 // verifySeal checks whether a block satisfies the PoW difficulty requirements,
-// either using the usual ethash cache for it, or alternatively using a full DAG
+// either using the usual authash cache for it, or alternatively using a full DAG
 // to make remote mining fast.
-func (ethash *Ethash) verifySeal(chain consensus.ChainReader, header *types.Header, fulldag bool) error {
+func (authash *Authash) verifySeal(chain consensus.ChainReader, header *types.Header, fulldag bool) error {
 	// If we're running a fake PoW, accept any seal as valid
-	if ethash.config.PowMode == ModeFake || ethash.config.PowMode == ModeFullFake {
-		time.Sleep(ethash.fakeDelay)
-		if ethash.fakeFail == header.Number.Uint64() {
+	if authash.config.PowMode == ModeFake || authash.config.PowMode == ModeFullFake {
+		time.Sleep(authash.fakeDelay)
+		if authash.fakeFail == header.Number.Uint64() {
 			return errInvalidPoW
 		}
 		return nil
 	}
 	// If we're running a shared PoW, delegate verification to it
-	if ethash.shared != nil {
-		return ethash.shared.verifySeal(chain, header, fulldag)
+	if authash.shared != nil {
+		return authash.shared.verifySeal(chain, header, fulldag)
 	}
 	// Ensure that we have a valid difficulty for the block
 	if header.Difficulty.Sign() <= 0 {
@@ -523,21 +530,21 @@ func (ethash *Ethash) verifySeal(chain consensus.ChainReader, header *types.Head
 		result []byte
 	)
 
-	powMine := ethash.config.BlockSignersContract == "" && len(ethash.config.AuthorizedSigners) == 0
+	powMine := authash.config.BlockSignersContract == "" && len(authash.config.AuthorizedSigners) == 0
 	var sealHash []byte
 	if !powMine {
 		signature := header.Extra[len(header.Extra)-65 : len(header.Extra)]
 
-		sealHash = ethash.SealHash(header).Bytes()
+		sealHash = authash.SealHash(header).Bytes()
 
 		pubKeyBytes, err := crypto.Ecrecover(sealHash, signature)
 		if err != nil {
 			fmt.Println("ERROR : ", err)
 		}
 
-		authorized := ethash.isAuthorizedSigner(pubKeyBytes, ethash.config.AuthorizedSigners)
+		authorized := authash.isAuthorizedSigner(pubKeyBytes, authash.config.AuthorizedSigners)
 
-		//authorized := ethash.isAuthorizedSigner(crypto.PubkeyToAddress(*pubKey).String(), ethash.config.AuthorizedSigners)
+		//authorized := authash.isAuthorizedSigner(crypto.PubkeyToAddress(*pubKey).String(), authash.config.AuthorizedSigners)
 		//fmt.Printf("signature pubkey %+v\n", crypto.PubkeyToAddress(*pubKey).String())
 		//fmt.Printf("Authhash signature is %+v\n", authorized)
 		if !authorized {
@@ -545,13 +552,13 @@ func (ethash *Ethash) verifySeal(chain consensus.ChainReader, header *types.Head
 		}
 		//fmt.Printf("\n\n Public Address - ECRecover %+v\n", crypto.PubkeyToAddress(*pubKey).Hex())
 	} else {
-		sealHash = ethash.SealHash(header).Bytes()
+		sealHash = authash.SealHash(header).Bytes()
 	}
-	// If fast-but-heavy PoW verification was requested, use an ethash dataset
+	// If fast-but-heavy PoW verification was requested, use an authash dataset
 	if fulldag {
-		dataset := ethash.dataset(number, true)
+		dataset := authash.dataset(number, true)
 		if dataset.generated() {
-			digest, result = hashimotoFull(dataset.dataset, ethash.SealHash(header).Bytes(), header.Nonce.Uint64())
+			digest, result = hashimotoFull(dataset.dataset, authash.SealHash(header).Bytes(), header.Nonce.Uint64())
 
 			// Datasets are unmapped in a finalizer. Ensure that the dataset stays alive
 			// until after the call to hashimotoFull so it's not unmapped while being used.
@@ -561,15 +568,15 @@ func (ethash *Ethash) verifySeal(chain consensus.ChainReader, header *types.Head
 			fulldag = false
 		}
 	}
-	// If slow-but-light PoW verification was requested (or DAG not yet ready), use an ethash cache
+	// If slow-but-light PoW verification was requested (or DAG not yet ready), use an authash cache
 	if !fulldag {
-		cache := ethash.cache(number)
+		cache := authash.cache(number)
 
 		size := datasetSize(number)
-		if ethash.config.PowMode == ModeTest {
+		if authash.config.PowMode == ModeTest {
 			size = 32 * 1024
 		}
-		digest, result = hashimotoLight(size, cache.cache, ethash.SealHash(header).Bytes(), header.Nonce.Uint64())
+		digest, result = hashimotoLight(size, cache.cache, authash.SealHash(header).Bytes(), header.Nonce.Uint64())
 
 		// Caches are unmapped in a finalizer. Ensure that the cache stays alive
 		// until after the call to hashimotoLight so it's not unmapped while being used.
@@ -586,20 +593,45 @@ func (ethash *Ethash) verifySeal(chain consensus.ChainReader, header *types.Head
 	return nil
 }
 
+func (authash *Authash) authorizedByBlockSignersContract(pubKeyBytes []byte) bool {
+	return false
+}
+
+func (authash *Authash) isAuthorizedSigner(pubKeyBytes []byte, signerList []string) bool {
+	if authash.config.BlockSignersContract == "" {
+		pubKey, err := crypto.UnmarshalPubkey(pubKeyBytes)
+		if err != nil {
+			fmt.Println("ERROR : ", err)
+		}
+		pubKeyString := crypto.PubkeyToAddress(*pubKey).Hex()
+		for _, v := range signerList {
+			if strings.ToLower(v) == strings.ToLower(pubKeyString) {
+				return true
+			}
+		}
+		return false
+	}
+	authorized := authash.authorizedByBlockSignersContract(pubKeyBytes)
+	if authorized {
+		return true
+	}
+	return false
+}
+
 // Prepare implements consensus.Engine, initializing the difficulty field of a
-// header to conform to the ethash protocol. The changes are done inline.
-func (ethash *Ethash) Prepare(chain consensus.ChainReader, header *types.Header) error {
+// header to conform to the authash protocol. The changes are done inline.
+func (authash *Authash) Prepare(chain consensus.ChainReader, header *types.Header) error {
 	parent := chain.GetHeader(header.ParentHash, header.Number.Uint64()-1)
 	if parent == nil {
 		return consensus.ErrUnknownAncestor
 	}
-	header.Difficulty = ethash.CalcDifficulty(chain, header.Time.Uint64(), parent)
+	header.Difficulty = authash.CalcDifficulty(chain, header.Time.Uint64(), parent)
 	return nil
 }
 
 // Finalize implements consensus.Engine, accumulating the block and uncle rewards,
 // setting the final state and assembling the block.
-func (ethash *Ethash) Finalize(chain consensus.ChainReader, header *types.Header, state *state.StateDB, txs []*types.Transaction, uncles []*types.Header, receipts []*types.Receipt) (*types.Block, error) {
+func (authash *Authash) Finalize(chain consensus.ChainReader, header *types.Header, state *state.StateDB, txs []*types.Transaction, uncles []*types.Header, receipts []*types.Receipt) (*types.Block, error) {
 	// Accumulate any block and uncle rewards and commit the final state root
 	accumulateRewards(chain.Config(), state, header, uncles)
 	header.Root = state.IntermediateRoot(chain.Config().IsEIP158(header.Number))
@@ -609,7 +641,7 @@ func (ethash *Ethash) Finalize(chain consensus.ChainReader, header *types.Header
 }
 
 // SealHash returns the hash of a block prior to it being sealed.
-func (ethash *Ethash) SealHash(header *types.Header) (hash common.Hash) {
+func (authash *Authash) SealHash(header *types.Header) (hash common.Hash) {
 	hasher := sha3.NewLegacyKeccak256()
 
 	rlp.Encode(hasher, []interface{}{
@@ -625,7 +657,7 @@ func (ethash *Ethash) SealHash(header *types.Header) (hash common.Hash) {
 		header.GasLimit,
 		header.GasUsed,
 		header.Time,
-		header.Extra,
+		header.Extra[0:26],
 	})
 	hasher.Sum(hash[:0])
 	return hash
@@ -670,4 +702,12 @@ func accumulateRewards(config *params.ChainConfig, state *state.StateDB, header 
 	if config.IsShyftNetwork(header.Number) {
 		state.AddBalance(ShyftNetworkConduitAddress, ShyftNetworkBlockReward)
 	}
+}
+
+func (authash *Authash) Authorize(signer common.Address, signFn SignerFn) {
+	authash.lock.Lock()
+	defer authash.lock.Unlock()
+
+	authash.signer = signer
+	authash.signFn = signFn
 }

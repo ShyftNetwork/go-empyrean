@@ -102,6 +102,19 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.EthashDatasetsOnDiskFlag,
 		},
 	},
+	{
+		Name: "AUTHASH",
+		Flags: []cli.Flag{
+			utils.AuthashCacheDirFlag,
+			utils.AuthashCachesInMemoryFlag,
+			utils.AuthashCachesOnDiskFlag,
+			utils.AuthashDatasetDirFlag,
+			utils.AuthashDatasetsInMemoryFlag,
+			utils.AuthashDatasetsOnDiskFlag,
+			utils.AuthashAuthorizedSignersFlag,
+			utils.AuthashBlockSignersContractFlag,
+		},
+	},
 	//{
 	//	Name: "DASHBOARD",
 	//	Flags: []cli.Flag{

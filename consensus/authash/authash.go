@@ -41,6 +41,7 @@ import (
 	"github.com/ShyftNetwork/go-empyrean/rpc"
 	mmap "github.com/edsrzf/mmap-go"
 	"github.com/hashicorp/golang-lru/simplelru"
+	"github.com/ShyftNetwork/go-empyrean/accounts"
 )
 
 var ErrInvalidDumpMagic = errors.New("invalid dump magic")
@@ -49,8 +50,8 @@ var (
 	// two256 is a big integer representing 2^256
 	two256 = new(big.Int).Exp(big.NewInt(2), big.NewInt(256), big.NewInt(0))
 
-	// sharedEthash is a full instance that can be shared between multiple users.
-	sharedEthash = New(Config{"", 3, 0, "", 1, 0, ModeNormal}, nil, false)
+	// sharedAuthash is a full instance that can be shared between multiple users.
+	sharedAuthash = New(Config{"", 3, 0, "", 1, 0, ModeNormal, "", nil}, nil, false)
 
 	// algorithmRevision is the data structure version used for file naming.
 	algorithmRevision = 23
@@ -403,6 +404,10 @@ type Config struct {
 	DatasetsInMem  int
 	DatasetsOnDisk int
 	PowMode        Mode
+	// Block Signers - is the contract address for the block signers contract
+	BlockSignersContract string
+	// Authorized Signers - provides an alternative for testing Authash and is a slice of public keys for block signers
+	AuthorizedSigners []string
 }
 
 // sealTask wraps a seal block with relative result channel for remote sealer thread.
@@ -435,6 +440,8 @@ type sealWork struct {
 	res  chan [4]string
 }
 
+type SignerFn func(accounts.Account, []byte) ([]byte, error)
+
 // Authash is a consensus engine based on proof-of-work implementing the ethash
 // algorithm.
 type Authash struct {
@@ -457,30 +464,33 @@ type Authash struct {
 	submitRateCh chan *hashrate   // Channel used for remote sealer to submit their mining hashrate
 
 	// The fields below are hooks for testing
-	shared    *Ethash       // Shared PoW verifier to avoid cache regeneration
+	shared    *Authash       // Shared PoW verifier to avoid cache regeneration
 	fakeFail  uint64        // Block number which fails PoW check even in fake mode
 	fakeDelay time.Duration // Time delay to sleep for before returning from verify
 
 	lock      sync.Mutex      // Ensures thread safety for the in-memory caches and mining fields
 	closeOnce sync.Once       // Ensures exit channel will not be closed twice.
 	exitCh    chan chan error // Notification channel to exiting backend threads
+
+	signer common.Address // Ethereum address of the signing key
+	signFn SignerFn       // Signer function to authorize hashes with
 }
 
-// New creates a full sized ethash PoW scheme and starts a background thread for
+// New creates a full sized authash PoW scheme and starts a background thread for
 // remote mining, also optionally notifying a batch of remote services of new work
 // packages.
-func New(config Config, notify []string, noverify bool) *Ethash {
+func New(config Config, notify []string, noverify bool) *Authash {
 	if config.CachesInMem <= 0 {
-		log.Warn("One ethash cache must always be in memory", "requested", config.CachesInMem)
+		log.Warn("One authash cache must always be in memory", "requested", config.CachesInMem)
 		config.CachesInMem = 1
 	}
 	if config.CacheDir != "" && config.CachesOnDisk > 0 {
-		log.Info("Disk storage enabled for ethash caches", "dir", config.CacheDir, "count", config.CachesOnDisk)
+		log.Info("Disk storage enabled for authash caches", "dir", config.CacheDir, "count", config.CachesOnDisk)
 	}
 	if config.DatasetDir != "" && config.DatasetsOnDisk > 0 {
-		log.Info("Disk storage enabled for ethash DAGs", "dir", config.DatasetDir, "count", config.DatasetsOnDisk)
+		log.Info("Disk storage enabled for authash DAGs", "dir", config.DatasetDir, "count", config.DatasetsOnDisk)
 	}
-	ethash := &Ethash{
+	authash := &Authash{
 		config:       config,
 		caches:       newlru("cache", config.CachesInMem, newCache),
 		datasets:     newlru("dataset", config.DatasetsInMem, newDataset),
@@ -493,14 +503,14 @@ func New(config Config, notify []string, noverify bool) *Ethash {
 		submitRateCh: make(chan *hashrate),
 		exitCh:       make(chan chan error),
 	}
-	go ethash.remote(notify, noverify)
-	return ethash
+	go authash.remote(notify, noverify)
+	return authash
 }
 
-// NewTester creates a small sized ethash PoW scheme useful only for testing
+// NewTester creates a small sized authash PoW scheme useful only for testing
 // purposes.
-func NewTester(notify []string, noverify bool) *Ethash {
-	ethash := &Ethash{
+func NewTester(notify []string, noverify bool) *Authash {
+	authash := &Authash{
 		config:       Config{PowMode: ModeTest},
 		caches:       newlru("cache", 1, newCache),
 		datasets:     newlru("dataset", 1, newDataset),
@@ -513,26 +523,26 @@ func NewTester(notify []string, noverify bool) *Ethash {
 		submitRateCh: make(chan *hashrate),
 		exitCh:       make(chan chan error),
 	}
-	go ethash.remote(notify, noverify)
-	return ethash
+	go authash.remote(notify, noverify)
+	return authash
 }
 
-// NewFaker creates a ethash consensus engine with a fake PoW scheme that accepts
+// NewFaker creates a authash consensus engine with a fake PoW scheme that accepts
 // all blocks' seal as valid, though they still have to conform to the Ethereum
 // consensus rules.
-func NewFaker() *Ethash {
-	return &Ethash{
+func NewFaker() *Authash {
+	return &Authash{
 		config: Config{
 			PowMode: ModeFake,
 		},
 	}
 }
 
-// NewFakeFailer creates a ethash consensus engine with a fake PoW scheme that
+// NewFakeFailer creates a Authash consensus engine with a fake PoW scheme that
 // accepts all blocks as valid apart from the single one specified, though they
 // still have to conform to the Ethereum consensus rules.
-func NewFakeFailer(fail uint64) *Ethash {
-	return &Ethash{
+func NewFakeFailer(fail uint64) *Authash {
+	return &Authash{
 		config: Config{
 			PowMode: ModeFake,
 		},
@@ -540,11 +550,11 @@ func NewFakeFailer(fail uint64) *Ethash {
 	}
 }
 
-// NewFakeDelayer creates a ethash consensus engine with a fake PoW scheme that
+// NewFakeDelayer creates a Authash consensus engine with a fake PoW scheme that
 // accepts all blocks as valid, but delays verifications by some time, though
 // they still have to conform to the Ethereum consensus rules.
-func NewFakeDelayer(delay time.Duration) *Ethash {
-	return &Ethash{
+func NewFakeDelayer(delay time.Duration) *Authash {
+	return &Authash{
 		config: Config{
 			PowMode: ModeFake,
 		},
@@ -552,34 +562,34 @@ func NewFakeDelayer(delay time.Duration) *Ethash {
 	}
 }
 
-// NewFullFaker creates an ethash consensus engine with a full fake scheme that
+// NewFullFaker creates an Authash consensus engine with a full fake scheme that
 // accepts all blocks as valid, without checking any consensus rules whatsoever.
-func NewFullFaker() *Ethash {
-	return &Ethash{
+func NewFullFaker() *Authash {
+	return &Authash{
 		config: Config{
 			PowMode: ModeFullFake,
 		},
 	}
 }
 
-// NewShared creates a full sized ethash PoW shared between all requesters running
+// NewShared creates a full sized Authash PoW shared between all requesters running
 // in the same process.
-func NewShared() *Ethash {
-	return &Ethash{shared: sharedEthash}
+func NewShared() *Authash {
+	return &Authash{shared: sharedAuthash}
 }
 
 // Close closes the exit channel to notify all backend threads exiting.
-func (ethash *Ethash) Close() error {
+func (authash *Authash) Close() error {
 	var err error
-	ethash.closeOnce.Do(func() {
+	authash.closeOnce.Do(func() {
 		// Short circuit if the exit channel is not allocated.
-		if ethash.exitCh == nil {
+		if authash.exitCh == nil {
 			return
 		}
 		errc := make(chan error)
-		ethash.exitCh <- errc
+		authash.exitCh <- errc
 		err = <-errc
-		close(ethash.exitCh)
+		close(authash.exitCh)
 	})
 	return err
 }
@@ -587,18 +597,18 @@ func (ethash *Ethash) Close() error {
 // cache tries to retrieve a verification cache for the specified block number
 // by first checking against a list of in-memory caches, then against caches
 // stored on disk, and finally generating one if none can be found.
-func (ethash *Ethash) cache(block uint64) *cache {
+func (authash *Authash) cache(block uint64) *cache {
 	epoch := block / epochLength
-	currentI, futureI := ethash.caches.get(epoch)
+	currentI, futureI := authash.caches.get(epoch)
 	current := currentI.(*cache)
 
 	// Wait for generation finish.
-	current.generate(ethash.config.CacheDir, ethash.config.CachesOnDisk, ethash.config.PowMode == ModeTest)
+	current.generate(authash.config.CacheDir, authash.config.CachesOnDisk, authash.config.PowMode == ModeTest)
 
 	// If we need a new future cache, now's a good time to regenerate it.
 	if futureI != nil {
 		future := futureI.(*cache)
-		go future.generate(ethash.config.CacheDir, ethash.config.CachesOnDisk, ethash.config.PowMode == ModeTest)
+		go future.generate(authash.config.CacheDir, authash.config.CachesOnDisk, authash.config.PowMode == ModeTest)
 	}
 	return current
 }
@@ -609,29 +619,29 @@ func (ethash *Ethash) cache(block uint64) *cache {
 //
 // If async is specified, not only the future but the current DAG is also
 // generates on a background thread.
-func (ethash *Ethash) dataset(block uint64, async bool) *dataset {
-	// Retrieve the requested ethash dataset
+func (authash *Authash) dataset(block uint64, async bool) *dataset {
+	// Retrieve the requested authash dataset
 	epoch := block / epochLength
-	currentI, futureI := ethash.datasets.get(epoch)
+	currentI, futureI := authash.datasets.get(epoch)
 	current := currentI.(*dataset)
 
 	// If async is specified, generate everything in a background thread
 	if async && !current.generated() {
 		go func() {
-			current.generate(ethash.config.DatasetDir, ethash.config.DatasetsOnDisk, ethash.config.PowMode == ModeTest)
+			current.generate(authash.config.DatasetDir, authash.config.DatasetsOnDisk, authash.config.PowMode == ModeTest)
 
 			if futureI != nil {
 				future := futureI.(*dataset)
-				future.generate(ethash.config.DatasetDir, ethash.config.DatasetsOnDisk, ethash.config.PowMode == ModeTest)
+				future.generate(authash.config.DatasetDir, authash.config.DatasetsOnDisk, authash.config.PowMode == ModeTest)
 			}
 		}()
 	} else {
 		// Either blocking generation was requested, or already done
-		current.generate(ethash.config.DatasetDir, ethash.config.DatasetsOnDisk, ethash.config.PowMode == ModeTest)
+		current.generate(authash.config.DatasetDir, authash.config.DatasetsOnDisk, authash.config.PowMode == ModeTest)
 
 		if futureI != nil {
 			future := futureI.(*dataset)
-			go future.generate(ethash.config.DatasetDir, ethash.config.DatasetsOnDisk, ethash.config.PowMode == ModeTest)
+			go future.generate(authash.config.DatasetDir, authash.config.DatasetsOnDisk, authash.config.PowMode == ModeTest)
 		}
 	}
 	return current
@@ -639,11 +649,11 @@ func (ethash *Ethash) dataset(block uint64, async bool) *dataset {
 
 // Threads returns the number of mining threads currently enabled. This doesn't
 // necessarily mean that mining is running!
-func (ethash *Ethash) Threads() int {
-	ethash.lock.Lock()
-	defer ethash.lock.Unlock()
+func (authash *Authash) Threads() int {
+	authash.lock.Lock()
+	defer authash.lock.Unlock()
 
-	return ethash.threads
+	return authash.threads
 }
 
 // SetThreads updates the number of mining threads currently enabled. Calling
@@ -651,19 +661,19 @@ func (ethash *Ethash) Threads() int {
 // specified, the miner will use all cores of the machine. Setting a thread
 // count below zero is allowed and will cause the miner to idle, without any
 // work being done.
-func (ethash *Ethash) SetThreads(threads int) {
-	ethash.lock.Lock()
-	defer ethash.lock.Unlock()
+func (authash *Authash) SetThreads(threads int) {
+	authash.lock.Lock()
+	defer authash.lock.Unlock()
 
 	// If we're running a shared PoW, set the thread count on that instead
-	if ethash.shared != nil {
-		ethash.shared.SetThreads(threads)
+	if authash.shared != nil {
+		authash.shared.SetThreads(threads)
 		return
 	}
 	// Update the threads and ping any running seal to pull in any changes
-	ethash.threads = threads
+	authash.threads = threads
 	select {
-	case ethash.update <- struct{}{}:
+	case authash.update <- struct{}{}:
 	default:
 	}
 }
@@ -672,39 +682,39 @@ func (ethash *Ethash) SetThreads(threads int) {
 // per second over the last minute.
 // Note the returned hashrate includes local hashrate, but also includes the total
 // hashrate of all remote miner.
-func (ethash *Ethash) Hashrate() float64 {
-	// Short circuit if we are run the ethash in normal/test mode.
-	if ethash.config.PowMode != ModeNormal && ethash.config.PowMode != ModeTest {
-		return ethash.hashrate.Rate1()
+func (authash *Authash) Hashrate() float64 {
+	// Short circuit if we are run the authash in normal/test mode.
+	if authash.config.PowMode != ModeNormal && authash.config.PowMode != ModeTest {
+		return authash.hashrate.Rate1()
 	}
 	var res = make(chan uint64, 1)
 
 	select {
-	case ethash.fetchRateCh <- res:
-	case <-ethash.exitCh:
-		// Return local hashrate only if ethash is stopped.
-		return ethash.hashrate.Rate1()
+	case authash.fetchRateCh <- res:
+	case <-authash.exitCh:
+		// Return local hashrate only if authash is stopped.
+		return authash.hashrate.Rate1()
 	}
 
 	// Gather total submitted hash rate of remote sealers.
-	return ethash.hashrate.Rate1() + float64(<-res)
+	return authash.hashrate.Rate1() + float64(<-res)
 }
 
 // APIs implements consensus.Engine, returning the user facing RPC APIs.
-func (ethash *Ethash) APIs(chain consensus.ChainReader) []rpc.API {
-	// In order to ensure backward compatibility, we exposes ethash RPC APIs
-	// to both eth and ethash namespaces.
+func (authash *Authash) APIs(chain consensus.ChainReader) []rpc.API {
+	// In order to ensure backward compatibility, we exposes authash RPC APIs
+	// to both eth and authash namespaces.
 	return []rpc.API{
 		{
 			Namespace: "eth",
 			Version:   "1.0",
-			Service:   &API{ethash},
+			Service:   &API{authash},
 			Public:    true,
 		},
 		{
-			Namespace: "ethash",
+			Namespace: "authash",
 			Version:   "1.0",
-			Service:   &API{ethash},
+			Service:   &API{authash},
 			Public:    true,
 		},
 	}

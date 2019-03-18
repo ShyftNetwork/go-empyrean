@@ -52,18 +52,18 @@ func TestRemoteNotify(t *testing.T) {
 		t.Fatal("tcp listener not ready for more than 10 seconds")
 	}
 
-	// Create the custom ethash engine
-	ethash := NewTester([]string{"http://" + listener.Addr().String()}, false)
-	defer ethash.Close()
+	// Create the custom authash engine
+	authash := NewTester([]string{"http://" + listener.Addr().String()}, false)
+	defer authash.Close()
 
 	// Stream a work task and ensure the notification bubbles out
 	header := &types.Header{Number: big.NewInt(1), Difficulty: big.NewInt(100)}
 	block := types.NewBlockWithHeader(header)
 
-	ethash.Seal(nil, block, nil, nil)
+	authash.Seal(nil, block, nil, nil)
 	select {
 	case work := <-sink:
-		if want := ethash.SealHash(header).Hex(); work[0] != want {
+		if want := authash.SealHash(header).Hex(); work[0] != want {
 			t.Errorf("work packet hash mismatch: have %s, want %s", work[0], want)
 		}
 		if want := common.BytesToHash(SeedHash(header.Number.Uint64())).Hex(); work[1] != want {
@@ -106,16 +106,16 @@ func TestRemoteMultiNotify(t *testing.T) {
 
 	go server.Serve(listener)
 
-	// Create the custom ethash engine
-	ethash := NewTester([]string{"http://" + listener.Addr().String()}, false)
-	defer ethash.Close()
+	// Create the custom authash engine
+	authash := NewTester([]string{"http://" + listener.Addr().String()}, false)
+	defer authash.Close()
 
 	// Stream a lot of work task and ensure all the notifications bubble out
 	for i := 0; i < cap(sink); i++ {
 		header := &types.Header{Number: big.NewInt(int64(i)), Difficulty: big.NewInt(100)}
 		block := types.NewBlockWithHeader(header)
 
-		ethash.Seal(nil, block, nil, nil)
+		authash.Seal(nil, block, nil, nil)
 	}
 	for i := 0; i < cap(sink); i++ {
 		select {
@@ -128,9 +128,9 @@ func TestRemoteMultiNotify(t *testing.T) {
 
 // Tests whether stale solutions are correctly processed.
 func TestStaleSubmission(t *testing.T) {
-	ethash := NewTester(nil, true)
-	defer ethash.Close()
-	api := &API{ethash}
+	authash := NewTester(nil, true)
+	defer authash.Close()
+	api := &API{authash}
 
 	fakeNonce, fakeDigest := types.BlockNonce{0x01, 0x02, 0x03}, common.HexToHash("deadbeef")
 
@@ -179,9 +179,9 @@ func TestStaleSubmission(t *testing.T) {
 
 	for id, c := range testcases {
 		for _, h := range c.headers {
-			ethash.Seal(nil, types.NewBlockWithHeader(h), results, nil)
+			authash.Seal(nil, types.NewBlockWithHeader(h), results, nil)
 		}
-		if res := api.SubmitWork(fakeNonce, ethash.SealHash(c.headers[c.submitIndex]), fakeDigest); res != c.submitRes {
+		if res := api.SubmitWork(fakeNonce, authash.SealHash(c.headers[c.submitIndex]), fakeDigest); res != c.submitRes {
 			t.Errorf("case %d submit result mismatch, want %t, get %t", id+1, c.submitRes, res)
 		}
 		if !c.submitRes {
@@ -205,7 +205,7 @@ func TestStaleSubmission(t *testing.T) {
 				t.Errorf("case %d block parent hash mismatch, want %s, get %s", id+1, c.headers[c.submitIndex].ParentHash.Hex(), res.Header().ParentHash.Hex())
 			}
 		case <-time.NewTimer(time.Second).C:
-			t.Errorf("case %d fetch ethash result timeout", id+1)
+			t.Errorf("case %d fetch authash result timeout", id+1)
 		}
 	}
 }

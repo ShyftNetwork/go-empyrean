@@ -48,7 +48,7 @@ const (
 	loopAccesses       = 64      // Number of accesses in hashimoto loop
 )
 
-// cacheSize returns the size of the ethash verification cache that belongs to a certain
+// cacheSize returns the size of the authash verification cache that belongs to a certain
 // block number.
 func cacheSize(block uint64) uint64 {
 	epoch := int(block / epochLength)
@@ -69,7 +69,7 @@ func calcCacheSize(epoch int) uint64 {
 	return size
 }
 
-// datasetSize returns the size of the ethash mining dataset that belongs to a certain
+// datasetSize returns the size of the authash mining dataset that belongs to a certain
 // block number.
 func datasetSize(block uint64) uint64 {
 	epoch := int(block / epochLength)
@@ -148,7 +148,7 @@ func generateCache(dest []uint32, epoch uint64, seed []byte) {
 		if elapsed > 3*time.Second {
 			logFn = logger.Info
 		}
-		logFn("Generated ethash verification cache", "elapsed", common.PrettyDuration(elapsed))
+		logFn("Generated authash verification cache", "elapsed", common.PrettyDuration(elapsed))
 	}()
 	// Convert our destination slice to a byte buffer
 	header := *(*reflect.SliceHeader)(unsafe.Pointer(&dest))
@@ -172,7 +172,7 @@ func generateCache(dest []uint32, epoch uint64, seed []byte) {
 			case <-done:
 				return
 			case <-time.After(3 * time.Second):
-				logger.Info("Generating ethash verification cache", "percentage", atomic.LoadUint32(&progress)*100/uint32(rows)/4, "elapsed", common.PrettyDuration(time.Since(start)))
+				logger.Info("Generating authash verification cache", "percentage", atomic.LoadUint32(&progress)*100/uint32(rows)/4, "elapsed", common.PrettyDuration(time.Since(start)))
 			}
 		}
 	}()
@@ -222,7 +222,7 @@ func fnv(a, b uint32) uint32 {
 	return a*0x01000193 ^ b
 }
 
-// fnvHash mixes in data into mix using the ethash fnv method.
+// fnvHash mixes in data into mix using the authash fnv method.
 func fnvHash(mix []uint32, data []uint32) {
 	for i := 0; i < len(mix); i++ {
 		mix[i] = mix[i]*0x01000193 ^ data[i]
@@ -262,7 +262,7 @@ func generateDatasetItem(cache []uint32, index uint32, keccak512 hasher) []byte 
 	return mix
 }
 
-// generateDataset generates the entire ethash dataset for mining.
+// generateDataset generates the entire authash dataset for mining.
 // This method places the result into dest in machine byte order.
 func generateDataset(dest []uint32, epoch uint64, cache []uint32) {
 	// Print some debug logs to allow analysis on low end devices
@@ -276,7 +276,7 @@ func generateDataset(dest []uint32, epoch uint64, cache []uint32) {
 		if elapsed > 3*time.Second {
 			logFn = logger.Info
 		}
-		logFn("Generated ethash verification cache", "elapsed", common.PrettyDuration(elapsed))
+		logFn("Generated authash verification cache", "elapsed", common.PrettyDuration(elapsed))
 	}()
 
 	// Figure out whether the bytes need to be swapped for the machine
@@ -402,7 +402,7 @@ func hashimotoFull(dataset []uint32, hash []byte, nonce uint64) ([]byte, []byte)
 
 const maxEpoch = 2048
 
-// datasetSizes is a lookup table for the ethash dataset size for the first 2048
+// datasetSizes is a lookup table for the authash dataset size for the first 2048
 // epochs (i.e. 61440000 blocks).
 var datasetSizes = [maxEpoch]uint64{
 	1073739904, 1082130304, 1090514816, 1098906752, 1107293056,
@@ -816,7 +816,7 @@ var datasetSizes = [maxEpoch]uint64{
 	18186498944, 18194886784, 18203275648, 18211666048, 18220048768,
 	18228444544, 18236833408, 18245220736}
 
-// cacheSizes is a lookup table for the ethash verification cache size for the
+// cacheSizes is a lookup table for the authash verification cache size for the
 // first 2048 epochs (i.e. 61440000 blocks).
 var cacheSizes = [maxEpoch]uint64{
 	16776896, 16907456, 17039296, 17170112, 17301056, 17432512, 17563072,

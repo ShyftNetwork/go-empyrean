@@ -50,6 +50,8 @@ profile.cov
 **/yarn-error.log
 # Remove Shyft Data
 shyftData/*
+shyft-config/*
+shyft-cli/*
 shyft-cli/web3/token_test/node_modules
 shyft-cli/web3/transfer-through-master/node_modules
 shyft-cli/web3/transfer-through-master/build

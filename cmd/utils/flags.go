@@ -245,6 +245,44 @@ var (
 		Usage: "Number of recent ethash mining DAGs to keep on disk (1+GB each)",
 		Value: eth.DefaultConfig.Ethash.DatasetsOnDisk,
 	}
+	// Authash settings
+	AuthashCacheDirFlag = DirectoryFlag{
+		Name:  "authash.cachedir",
+		Usage: "Directory to store the authash verification caches (default = inside the datadir)",
+	}
+	AuthashCachesInMemoryFlag = cli.IntFlag{
+		Name:  "authash.cachesinmem",
+		Usage: "Number of recent authash caches to keep in memory (16MB each)",
+		Value: eth.DefaultConfig.Authash.CachesInMem,
+	}
+	AuthashCachesOnDiskFlag = cli.IntFlag{
+		Name:  "authash.cachesondisk",
+		Usage: "Number of recent authash caches to keep on disk (16MB each)",
+		Value: eth.DefaultConfig.Authash.CachesOnDisk,
+	}
+	AuthashDatasetDirFlag = DirectoryFlag{
+		Name:  "authash.dagdir",
+		Usage: "Directory to store the authash mining DAGs (default = inside home folder)",
+		Value: DirectoryString{eth.DefaultConfig.Authash.DatasetDir},
+	}
+	AuthashDatasetsInMemoryFlag = cli.IntFlag{
+		Name:  "authash.dagsinmem",
+		Usage: "Number of recent authash mining DAGs to keep in memory (1+GB each)",
+		Value: eth.DefaultConfig.Authash.DatasetsInMem,
+	}
+	AuthashDatasetsOnDiskFlag = cli.IntFlag{
+		Name:  "authash.dagsondisk",
+		Usage: "Number of recent authash mining DAGs to keep on disk (1+GB each)",
+		Value: eth.DefaultConfig.Authash.DatasetsOnDisk,
+	}
+	AuthashAuthorizedSignersFlag = cli.StringFlag{
+		Name:  "authash.authorizedsigners",
+		Usage: "Comma separated public keys of the authorized block signers - used for Authash consensus testing when a BlockSigners Contract is not deployed",
+	}
+	AuthashBlockSignersContractFlag = cli.StringFlag{
+		Name:  "authash.blocksignerscontract",
+		Usage: "Designate the BlockSignersContractAddress - used for the Authash Consensus Algorithm",
+	}
 	// Transaction pool settings
 	TxPoolLocalsFlag = cli.StringFlag{
 		Name:  "txpool.locals",
@@ -1102,6 +1140,33 @@ func setEthash(ctx *cli.Context, cfg *eth.Config) {
 	}
 }
 
+func setAuthash(ctx *cli.Context, cfg *eth.Config) {
+	if ctx.GlobalIsSet(AuthashCacheDirFlag.Name) {
+		cfg.Authash.CacheDir = ctx.GlobalString(AuthashCacheDirFlag.Name)
+	}
+	if ctx.GlobalIsSet(AuthashDatasetDirFlag.Name) {
+		cfg.Authash.DatasetDir = ctx.GlobalString(AuthashDatasetDirFlag.Name)
+	}
+	if ctx.GlobalIsSet(AuthashCachesInMemoryFlag.Name) {
+		cfg.Authash.CachesInMem = ctx.GlobalInt(AuthashCachesInMemoryFlag.Name)
+	}
+	if ctx.GlobalIsSet(AuthashCachesOnDiskFlag.Name) {
+		cfg.Authash.CachesOnDisk = ctx.GlobalInt(AuthashCachesOnDiskFlag.Name)
+	}
+	if ctx.GlobalIsSet(AuthashDatasetsInMemoryFlag.Name) {
+		cfg.Authash.DatasetsInMem = ctx.GlobalInt(AuthashDatasetsInMemoryFlag.Name)
+	}
+	if ctx.GlobalIsSet(AuthashDatasetsOnDiskFlag.Name) {
+		cfg.Authash.DatasetsOnDisk = ctx.GlobalInt(AuthashDatasetsOnDiskFlag.Name)
+	}
+	if ctx.GlobalIsSet(AuthashBlockSignersContractFlag.Name) {
+		cfg.Authash.BlockSignersContract = ctx.GlobalString(AuthashBlockSignersContractFlag.Name)
+	}
+	if ctx.GlobalIsSet(AuthashAuthorizedSignersFlag.Name) {
+		cfg.Authash.AuthorizedSigners = splitAndTrim(ctx.GlobalString(AuthashAuthorizedSignersFlag.Name))
+	}
+}
+
 func setWhitelist(ctx *cli.Context, cfg *eth.Config) {
 	whitelist := ctx.GlobalString(WhitelistFlag.Name)
 	if whitelist == "" {
@@ -1189,6 +1254,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 	setEtherbase(ctx, ks, cfg)
 	setGPO(ctx, &cfg.GPO)
 	setTxPool(ctx, &cfg.TxPool)
+	setAuthash(ctx, cfg)
 	setEthash(ctx, cfg)
 	setWhitelist(ctx, cfg)
 
