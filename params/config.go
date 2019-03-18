@@ -183,7 +183,7 @@ type ChainConfig struct {
 
 	// Various consensus engines
 	Ethash *EthashConfig `json:"ethash,omitempty"`
-	Authash *AuthashConfig `json:"ethash,omitempty"`
+	Authash *AuthashConfig `json:"authash,omitempty"`
 	Clique *CliqueConfig `json:"clique,omitempty"`
 }
 

@@ -141,7 +141,7 @@ func (authash *Authash) Seal(chain consensus.ChainReader, block *types.Block, re
 			}
 			// One of the threads found a block, abort all others
 			select {
-			case results <- result:
+			case results <- block.WithSeal(header):
 			default:
 				log.Warn("Sealing result is not read by miner", "mode", "local", "sealhash", authash.SealHash(block.Header()))
 			}
