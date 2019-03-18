@@ -9,7 +9,7 @@
     "eip160Block": 5,
     "byzantiumBlock": 4,
 	"shyftNetworkBlock": 1,
-    "ethash": {}
+    "authash": {}
   },
   "nonce": "0x0000000000000042",
   "timestamp": "0x5aaef881",

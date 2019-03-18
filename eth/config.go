@@ -31,17 +31,27 @@ import (
 	"github.com/ShyftNetwork/go-empyrean/eth/downloader"
 	"github.com/ShyftNetwork/go-empyrean/eth/gasprice"
 	"github.com/ShyftNetwork/go-empyrean/params"
+	"github.com/ShyftNetwork/go-empyrean/consensus/authash"
 )
 
 // DefaultConfig contains default settings for use on the Ethereum main net.
 var DefaultConfig = Config{
 	SyncMode: downloader.FastSync,
-	Ethash: ethash.Config{
-		CacheDir:       "ethash",
+	//Ethash: ethash.Config{
+	//	CacheDir:       "ethash",
+	//	CachesInMem:    2,
+	//	CachesOnDisk:   3,
+	//	DatasetsInMem:  1,
+	//	DatasetsOnDisk: 2,
+	//},
+	Authash: authash.Config{
+		CacheDir:       "authash",
 		CachesInMem:    2,
 		CachesOnDisk:   3,
 		DatasetsInMem:  1,
 		DatasetsOnDisk: 2,
+		BlockSignersContract: "",
+		AuthorizedSigners:    nil,
 	},
 	NetworkId:      1,
 	LightPeers:     100,
@@ -113,6 +123,10 @@ type Config struct {
 
 	// Ethash options
 	Ethash ethash.Config
+
+	Authash authash.Config
+	//// Authash Consensus Algorithm
+	//Authash bool `toml:",omitempty"`
 
 	// Transaction pool options
 	TxPool core.TxPoolConfig

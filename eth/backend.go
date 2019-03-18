@@ -49,6 +49,7 @@ import (
 	"github.com/ShyftNetwork/go-empyrean/params"
 	"github.com/ShyftNetwork/go-empyrean/rlp"
 	"github.com/ShyftNetwork/go-empyrean/rpc"
+	"github.com/ShyftNetwork/go-empyrean/consensus/authash"
 )
 
 type LesServer interface {
@@ -151,7 +152,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 		chainConfig:    chainConfig,
 		eventMux:       ctx.EventMux,
 		accountManager: ctx.AccountManager,
-		engine:         CreateConsensusEngine(ctx, chainConfig, &config.Ethash, config.MinerNotify, config.MinerNoverify, chainDb),
+		engine:         CreateConsensusEngine(ctx, chainConfig, &config.Authash, &config.Ethash, config.MinerNotify, config.MinerNoverify, chainDb),
 		shutdownChan:   make(chan bool),
 		networkID:      config.NetworkId,
 		gasPrice:       config.MinerGasPrice,
@@ -256,8 +257,6 @@ func rollbackFn(message string, bc *core.BlockChain, miner *miner.Miner, shyftDb
 		if miner != nil {
 			miner.Start(coinbase)
 		}
-		fmt.Println("FOOOO")
-
 	} else {
 		fmt.Printf("Rollback was not executed as the block with blockhash= %s does not exist \n", blockhash)
 	}
@@ -302,24 +301,53 @@ func CreateShyftDB(ctx *node.ServiceContext) (ethdb.SDatabase, error) {
 }
 
 // CreateConsensusEngine creates the required type of consensus engine instance for an Ethereum service
-func CreateConsensusEngine(ctx *node.ServiceContext, chainConfig *params.ChainConfig, config *ethash.Config, notify []string, noverify bool, db ethdb.Database) consensus.Engine {
+func CreateConsensusEngine(ctx *node.ServiceContext, chainConfig *params.ChainConfig, config *authash.Config, config2 *ethash.Config, notify []string, noverify bool, db ethdb.Database) consensus.Engine {
 	// If proof-of-authority is requested, set it up
 	if chainConfig.Clique != nil {
 		return clique.New(chainConfig.Clique, db)
 	}
-	// Otherwise assume proof-of-work
-	switch config.PowMode {
+
+	if chainConfig.Authash != nil {
+		// Otherwise assume proof-of-work
+		switch config.PowMode {
+		case authash.ModeFake:
+			log.Warn("Authash used in fake mode")
+			return authash.NewFaker()
+		case authash.ModeTest:
+			log.Warn("Authash used in test mode")
+			return authash.NewTester(nil, noverify)
+		case authash.ModeShared:
+			log.Warn("Authash used in shared mode")
+			return authash.NewShared()
+		default:
+			log.Warn("Authash used in POW")
+			engine := authash.New(authash.Config{
+				CacheDir:             ctx.ResolvePath(config.CacheDir),
+				CachesInMem:          config.CachesInMem,
+				CachesOnDisk:         config.CachesOnDisk,
+				DatasetDir:           config.DatasetDir,
+				DatasetsInMem:        config.DatasetsInMem,
+				DatasetsOnDisk:       config.DatasetsOnDisk,
+				BlockSignersContract: config.BlockSignersContract,
+				AuthorizedSigners:    config.AuthorizedSigners,
+			}, notify, noverify)
+			engine.SetThreads(-1) // Disable CPU mining
+			return engine
+		}
+	}
+	// Otherwise assume ethash proof-of-work
+	switch config2.PowMode {
 	case ethash.ModeFake:
-		log.Warn("Ethash used in fake mode")
+		log.Warn("ethash used in fake mode")
 		return ethash.NewFaker()
 	case ethash.ModeTest:
-		log.Warn("Ethash used in test mode")
+		log.Warn("ethash used in test mode")
 		return ethash.NewTester(nil, noverify)
 	case ethash.ModeShared:
-		log.Warn("Ethash used in shared mode")
+		log.Warn("ethash used in shared mode")
 		return ethash.NewShared()
 	default:
-		log.Warn("Ethash used in POW")
+		log.Warn("ethash used in POW")
 		engine := ethash.New(ethash.Config{
 			CacheDir:       ctx.ResolvePath(config.CacheDir),
 			CachesInMem:    config.CachesInMem,
@@ -517,6 +545,25 @@ func (s *Ethereum) StartMining(threads int) error {
 			}
 			clique.Authorize(eb, wallet.SignHash)
 		}
+
+		if _, ok := s.engine.(*ethash.Ethash); ok {
+			log.Info("Setting Up Consensus Engine Ethash")
+			// If mining is started, we can disable the transaction rejection mechanism
+			// introduced to speed sync times.
+			atomic.StoreUint32(&s.protocolManager.acceptTxs, 1)
+
+			go s.miner.Start(eb)
+			return nil
+		}
+
+		log.Info("Setting Up Consensus Engine Authash")
+		wallet, err := s.accountManager.Find(accounts.Account{Address: eb})
+		if wallet == nil || err != nil {
+			log.Error("Etherbase account unavailable locally", "err", err)
+			return fmt.Errorf("signer missing: %v", err)
+		}
+		s.engine.(*authash.Authash).Authorize(eb, wallet.SignHash)
+
 		// If mining is started, we can disable the transaction rejection mechanism
 		// introduced to speed sync times.
 		atomic.StoreUint32(&s.protocolManager.acceptTxs, 1)

@@ -58,6 +58,7 @@ import (
 	"github.com/ShyftNetwork/go-empyrean/params"
 	whisper "github.com/ShyftNetwork/go-empyrean/whisper/whisperv6"
 	"gopkg.in/urfave/cli.v1"
+	"github.com/ShyftNetwork/go-empyrean/consensus/authash"
 )
 
 var (
@@ -1464,7 +1465,7 @@ func MakeChain(ctx *cli.Context, stack *node.Node) (chain *core.BlockChain, chai
 	var engine consensus.Engine
 	if config.Clique != nil {
 		engine = clique.New(config.Clique, chainDb)
-	} else {
+	} else if config.Ethash != nil {
 		engine = ethash.NewFaker()
 		if !ctx.GlobalBool(FakePoWFlag.Name) {
 			engine = ethash.New(ethash.Config{
@@ -1474,6 +1475,21 @@ func MakeChain(ctx *cli.Context, stack *node.Node) (chain *core.BlockChain, chai
 				DatasetDir:     stack.ResolvePath(eth.DefaultConfig.Ethash.DatasetDir),
 				DatasetsInMem:  eth.DefaultConfig.Ethash.DatasetsInMem,
 				DatasetsOnDisk: eth.DefaultConfig.Ethash.DatasetsOnDisk,
+			}, nil, false)
+		}
+	} else {
+		engine = authash.NewFaker()
+		if !ctx.GlobalBool(FakePoWFlag.Name) {
+			engine = authash.New(authash.Config{
+				CacheDir:       stack.ResolvePath(eth.DefaultConfig.Authash.CacheDir),
+				CachesInMem:    eth.DefaultConfig.Authash.CachesInMem,
+				CachesOnDisk:   eth.DefaultConfig.Authash.CachesOnDisk,
+				DatasetDir:     stack.ResolvePath(eth.DefaultConfig.Authash.DatasetDir),
+				DatasetsInMem:  eth.DefaultConfig.Authash.DatasetsInMem,
+				DatasetsOnDisk: eth.DefaultConfig.Authash.DatasetsOnDisk,
+				BlockSignersContract: eth.DefaultConfig.Authash.BlockSignersContract,
+				AuthorizedSigners:    eth.DefaultConfig.Authash.AuthorizedSigners,
+
 			}, nil, false)
 		}
 	}

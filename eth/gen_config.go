@@ -8,6 +8,7 @@ import (
 
 	"github.com/ShyftNetwork/go-empyrean/common"
 	"github.com/ShyftNetwork/go-empyrean/common/hexutil"
+	"github.com/ShyftNetwork/go-empyrean/consensus/authash"
 	"github.com/ShyftNetwork/go-empyrean/consensus/ethash"
 	"github.com/ShyftNetwork/go-empyrean/core"
 	"github.com/ShyftNetwork/go-empyrean/eth/downloader"
@@ -23,10 +24,11 @@ func (c Config) MarshalTOML() (interface{}, error) {
 		NetworkId               uint64
 		SyncMode                downloader.SyncMode
 		NoPruning               bool
-		LightServ               int  `toml:",omitempty"`
-		LightPeers              int  `toml:",omitempty"`
-		SkipBcVersionCheck      bool `toml:"-"`
-		DatabaseHandles         int  `toml:"-"`
+		Whitelist               map[uint64]common.Hash `toml:"-"`
+		LightServ               int                    `toml:",omitempty"`
+		LightPeers              int                    `toml:",omitempty"`
+		SkipBcVersionCheck      bool                   `toml:"-"`
+		DatabaseHandles         int                    `toml:"-"`
 		DatabaseCache           int
 		TrieCleanCache          int
 		TrieDirtyCache          int
@@ -41,18 +43,21 @@ func (c Config) MarshalTOML() (interface{}, error) {
 		MinerRecommit           time.Duration
 		MinerNoverify           bool
 		Ethash                  ethash.Config
+		Authash                 authash.Config
 		TxPool                  core.TxPoolConfig
 		GPO                     gasprice.Config
 		EnablePreimageRecording bool
 		DocRoot                 string `toml:"-"`
 		EWASMInterpreter        string
 		EVMInterpreter          string
+		ConstantinopleOverride  *big.Int
 	}
 	var enc Config
 	enc.Genesis = c.Genesis
 	enc.NetworkId = c.NetworkId
 	enc.SyncMode = c.SyncMode
 	enc.NoPruning = c.NoPruning
+	enc.Whitelist = c.Whitelist
 	enc.LightServ = c.LightServ
 	enc.LightPeers = c.LightPeers
 	enc.SkipBcVersionCheck = c.SkipBcVersionCheck
@@ -71,12 +76,14 @@ func (c Config) MarshalTOML() (interface{}, error) {
 	enc.MinerRecommit = c.MinerRecommit
 	enc.MinerNoverify = c.MinerNoverify
 	enc.Ethash = c.Ethash
+	enc.Authash = c.Authash
 	enc.TxPool = c.TxPool
 	enc.GPO = c.GPO
 	enc.EnablePreimageRecording = c.EnablePreimageRecording
 	enc.DocRoot = c.DocRoot
 	enc.EWASMInterpreter = c.EWASMInterpreter
 	enc.EVMInterpreter = c.EVMInterpreter
+	enc.ConstantinopleOverride = c.ConstantinopleOverride
 	return &enc, nil
 }
 
@@ -87,10 +94,11 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 		NetworkId               *uint64
 		SyncMode                *downloader.SyncMode
 		NoPruning               *bool
-		LightServ               *int  `toml:",omitempty"`
-		LightPeers              *int  `toml:",omitempty"`
-		SkipBcVersionCheck      *bool `toml:"-"`
-		DatabaseHandles         *int  `toml:"-"`
+		Whitelist               map[uint64]common.Hash `toml:"-"`
+		LightServ               *int                   `toml:",omitempty"`
+		LightPeers              *int                   `toml:",omitempty"`
+		SkipBcVersionCheck      *bool                  `toml:"-"`
+		DatabaseHandles         *int                   `toml:"-"`
 		DatabaseCache           *int
 		TrieCleanCache          *int
 		TrieDirtyCache          *int
@@ -105,12 +113,14 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 		MinerRecommit           *time.Duration
 		MinerNoverify           *bool
 		Ethash                  *ethash.Config
+		Authash                 *authash.Config
 		TxPool                  *core.TxPoolConfig
 		GPO                     *gasprice.Config
 		EnablePreimageRecording *bool
 		DocRoot                 *string `toml:"-"`
 		EWASMInterpreter        *string
 		EVMInterpreter          *string
+		ConstantinopleOverride  *big.Int
 	}
 	var dec Config
 	if err := unmarshal(&dec); err != nil {
@@ -127,6 +137,9 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	}
 	if dec.NoPruning != nil {
 		c.NoPruning = *dec.NoPruning
+	}
+	if dec.Whitelist != nil {
+		c.Whitelist = dec.Whitelist
 	}
 	if dec.LightServ != nil {
 		c.LightServ = *dec.LightServ
@@ -182,6 +195,9 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	if dec.Ethash != nil {
 		c.Ethash = *dec.Ethash
 	}
+	if dec.Authash != nil {
+		c.Authash = *dec.Authash
+	}
 	if dec.TxPool != nil {
 		c.TxPool = *dec.TxPool
 	}
@@ -199,6 +215,9 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	}
 	if dec.EVMInterpreter != nil {
 		c.EVMInterpreter = *dec.EVMInterpreter
+	}
+	if dec.ConstantinopleOverride != nil {
+		c.ConstantinopleOverride = dec.ConstantinopleOverride
 	}
 	return nil
 }

@@ -3,18 +3,20 @@ NetworkId = 2147483647
 SyncMode = "fast"
 LightPeers = 100
 DatabaseCache = 768
-Etherbase = "0x43ec6d0942f7faef069f7f63d0384a27f529b062"
+Etherbase = "0xf3ba871253bd769b74aff013f52dbaff174bf19a"
 MinerGasPrice = 18000000000
 EnablePreimageRecording = false
 
-[Eth.Ethash]
-CacheDir = "ethash"
+[Eth.Authash]
+CacheDir = "authash"
 CachesInMem = 2
 CachesOnDisk = 3
-DatasetDir = "./ethash/.ethash"
+DatasetDir = "./authash/.authash"
 DatasetsInMem = 1
 DatasetsOnDisk = 2
 PowMode = 0
+BlockSignersContract = ""
+AuthorizedSigners = ["0xf3ba871253bd769b74aff013f52dbaff174bf19a", "0xd0c2dc5d5cf17d3548ef1508a99f091b35557b4a", "0xd7c23503a253a1f4f0e748b3d8f2738964f16758"]
 
 [Eth.TxPool]
 NoLocals = false
