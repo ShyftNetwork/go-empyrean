@@ -227,7 +227,6 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 }
 
 func rollbackListener(whispChan chan string, bc *core.BlockChain, shyftDb ethdb.SDatabase, coinbase common.Address, miner *miner.Miner) {
-
 	for message := range whispChan {
 		rollbackFn(message, bc, miner, shyftDb, coinbase)
 	}
@@ -242,7 +241,6 @@ func rollbackFn(message string, bc *core.BlockChain, miner *miner.Miner, shyftDb
 			miner.Stop()
 		}
 		_, bHashes := bc.GetBlockHashesSinceLastValidBlockHash(commonhash)
-		fmt.Println(blocknumber.NumberU64())
 		err := bc.SetHead(blocknumber.NumberU64())
 		if err != nil {
 			fmt.Println("err ", err)
@@ -320,7 +318,6 @@ func CreateConsensusEngine(ctx *node.ServiceContext, chainConfig *params.ChainCo
 			log.Warn("Authash used in shared mode")
 			return authash.NewShared()
 		default:
-			log.Warn("Authash used in POW")
 			engine := authash.New(authash.Config{
 				CacheDir:             ctx.ResolvePath(config.CacheDir),
 				CachesInMem:          config.CachesInMem,
@@ -347,7 +344,6 @@ func CreateConsensusEngine(ctx *node.ServiceContext, chainConfig *params.ChainCo
 		log.Warn("ethash used in shared mode")
 		return ethash.NewShared()
 	default:
-		log.Warn("ethash used in POW")
 		engine := ethash.New(ethash.Config{
 			CacheDir:       ctx.ResolvePath(config.CacheDir),
 			CachesInMem:    config.CachesInMem,
@@ -567,7 +563,7 @@ func (s *Ethereum) StartMining(threads int) error {
 		// If mining is started, we can disable the transaction rejection mechanism
 		// introduced to speed sync times.
 		atomic.StoreUint32(&s.protocolManager.acceptTxs, 1)
-		fmt.Printf("CONFIG  before miner start %+v\n", s.config.Authash)
+		
 		go s.miner.Start(eb)
 	}
 	return nil

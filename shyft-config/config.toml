@@ -16,7 +16,7 @@ DatasetsInMem = 1
 DatasetsOnDisk = 2
 PowMode = 0
 BlockSignersContract = ""
-AuthorizedSigners = ["0xf3ba871253bd769b74aff013f52dbaff174bf19a", "0xd0c2dc5d5cf17d3548ef1508a99f091b35557b4a"]
+AuthorizedSigners = ["0xf3ba871253bd769b74aff013f52dbaff174bf19a"]
 
 [Eth.TxPool]
 NoLocals = false

@@ -1165,6 +1165,10 @@ func setAuthash(ctx *cli.Context, cfg *eth.Config) {
 	if ctx.GlobalIsSet(AuthashAuthorizedSignersFlag.Name) {
 		cfg.Authash.AuthorizedSigners = splitAndTrim(ctx.GlobalString(AuthashAuthorizedSignersFlag.Name))
 	}
+	if cfg.Authash.BlockSignersContract == "" && len(cfg.Authash.AuthorizedSigners) == 0 {
+		log.Info("You Specified - Consensus Authash - without configuring Authorized Signers or the BlockSigners Contract Address")
+		os.Exit(22)
+	}
 }
 
 func setWhitelist(ctx *cli.Context, cfg *eth.Config) {
@@ -1531,7 +1535,21 @@ func MakeChain(ctx *cli.Context, stack *node.Node) (chain *core.BlockChain, chai
 	var engine consensus.Engine
 	if config.Clique != nil {
 		engine = clique.New(config.Clique, chainDb)
-	} else if config.Ethash != nil {
+	} else if config.Authash != nil {
+		engine = authash.NewFaker()
+		if !ctx.GlobalBool(FakePoWFlag.Name) {
+			engine = authash.New(authash.Config{
+				CacheDir:             stack.ResolvePath(eth.DefaultConfig.Authash.CacheDir),
+				CachesInMem:          eth.DefaultConfig.Authash.CachesInMem,
+				CachesOnDisk:         eth.DefaultConfig.Authash.CachesOnDisk,
+				DatasetDir:           stack.ResolvePath(eth.DefaultConfig.Authash.DatasetDir),
+				DatasetsInMem:        eth.DefaultConfig.Authash.DatasetsInMem,
+				DatasetsOnDisk:       eth.DefaultConfig.Authash.DatasetsOnDisk,
+				BlockSignersContract: eth.DefaultConfig.Authash.BlockSignersContract,
+				AuthorizedSigners:    eth.DefaultConfig.Authash.AuthorizedSigners,
+			}, nil, false)
+		}
+	} else {
 		engine = ethash.NewFaker()
 		if !ctx.GlobalBool(FakePoWFlag.Name) {
 			engine = ethash.New(ethash.Config{
@@ -1541,21 +1559,6 @@ func MakeChain(ctx *cli.Context, stack *node.Node) (chain *core.BlockChain, chai
 				DatasetDir:     stack.ResolvePath(eth.DefaultConfig.Ethash.DatasetDir),
 				DatasetsInMem:  eth.DefaultConfig.Ethash.DatasetsInMem,
 				DatasetsOnDisk: eth.DefaultConfig.Ethash.DatasetsOnDisk,
-			}, nil, false)
-		}
-	} else {
-		engine = authash.NewFaker()
-		if !ctx.GlobalBool(FakePoWFlag.Name) {
-			engine = authash.New(authash.Config{
-				CacheDir:       stack.ResolvePath(eth.DefaultConfig.Authash.CacheDir),
-				CachesInMem:    eth.DefaultConfig.Authash.CachesInMem,
-				CachesOnDisk:   eth.DefaultConfig.Authash.CachesOnDisk,
-				DatasetDir:     stack.ResolvePath(eth.DefaultConfig.Authash.DatasetDir),
-				DatasetsInMem:  eth.DefaultConfig.Authash.DatasetsInMem,
-				DatasetsOnDisk: eth.DefaultConfig.Authash.DatasetsOnDisk,
-				BlockSignersContract: eth.DefaultConfig.Authash.BlockSignersContract,
-				AuthorizedSigners:    eth.DefaultConfig.Authash.AuthorizedSigners,
-
 			}, nil, false)
 		}
 	}
