@@ -448,7 +448,7 @@ func (w *Whisper) Send(envelope *Envelope) error {
 // Start implements node.Service, starting the background data propagation thread
 // of the Whisper protocol.
 func (w *Whisper) Start(*p2p.Server) error {
-	log.Info("started whisper v." + ProtocolVersionStr)
+	log.Info("Started whisper v." + ProtocolVersionStr)
 	go w.update()
 
 	numCPU := runtime.NumCPU()
@@ -463,7 +463,7 @@ func (w *Whisper) Start(*p2p.Server) error {
 // of the Whisper protocol.
 func (w *Whisper) Stop() error {
 	close(w.quit)
-	log.Info("whisper stopped")
+	log.Info("Whisper stopped")
 	return nil
 }
 

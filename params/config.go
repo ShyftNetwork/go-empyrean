@@ -219,7 +219,6 @@ func (c *ChainConfig) String() string {
 	var engine interface{}
 	switch {
 	case c.Authash != nil:
-		fmt.Println("AUTHASHHHHHHHH params/config.go", c.Authash)
 		engine = c.Authash
 	case c.Ethash != nil:
 		engine = c.Ethash

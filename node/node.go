@@ -272,7 +272,7 @@ func (n *Node) Start() error {
 			if err != nil {
 				log.Error("subscription error:", err)
 			}
-			log.Info("listening for messages", "topicString", topicString)
+			log.Info("Listening for messages", "topicString", topicString)
 			go n.whisperMessageReceiver(sub, messages)
 		}
 	}
@@ -351,8 +351,6 @@ func SignHash(data []byte) ([]byte, string) {
 }
 
 func (n *Node) whisperMessageReceiver(sub ethereum.Subscription, messages chan *whisperv6.Message) {
-	//conn := n.dialIPC()
-	fmt.Println("Started Message Receiver")
 	for {
 		select {
 		case err := <-sub.Err():
@@ -360,6 +358,7 @@ func (n *Node) whisperMessageReceiver(sub ethereum.Subscription, messages chan *
 		case message := <-messages:
 			// get eth public keys from message
 			blockHash, sig := parseMessage(string(message.Payload[:]))
+			log.Info("Started Message Receiver", "hash", blockHash)
 			sigByteArray, err := hexutil.Decode(sig)
 			if err != nil {
 				log.Error("hexutil.Decode err", "err", err)
@@ -376,11 +375,11 @@ func (n *Node) whisperMessageReceiver(sub ethereum.Subscription, messages chan *
 				//authMethodContract := n.smartContractAvailable(n.config.WhisperSignersContract, conn)
 				var authorized bool
 				if n.config.WhisperSignersContract != "" {
-					fmt.Println("Starting smart contract check")
+					log.Info("Starting smart contract check")
 					conn := n.dialIPC()
 					authorized = n.CheckContractAdminStatus(recoveredAddr, conn)
 				} else {
-					fmt.Println("Starting whisper keys")
+					log.Info("Starting whisper keys")
 					if len(n.config.WhisperKeys) > 0 {
 						authorized = n.CheckWhisperPublicFlagKeys(recoveredAddr)
 					}
@@ -507,7 +506,7 @@ func (n *Node) startHTTP(endpoint string, apis []rpc.API, modules []string, cors
 	if err != nil {
 		return err
 	}
-	n.log.Info("HTTP endpoint opened", "url", fmt.Sprintf("http://%s", endpoint), "cors", strings.Join(cors, ","), "vhosts", strings.Join(vhosts, ","))
+	n.log.Info("HTTP endpoint opened", "url",fmt.Sprintf("http://%s", endpoint),"cors", strings.Join(cors, ","),"vhosts", strings.Join(vhosts, ","))
 	// All listeners booted successfully
 	n.httpEndpoint = endpoint
 	n.httpListener = listener
