@@ -6,15 +6,15 @@
 [![Build Status](https://travis-ci.org/ShyftNetwork/go-empyrean.svg?branch=development)](https://travis-ci.org/ShyftNetwork/shyft_go-ethereum)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ShyftNetwork/go-empyrean?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-go-empyrean is based on a fork of go-ethereum. Much of the functionality and process for starting go-empyrean is the same as that for a regular ethereum node - as reflected in the notes detailed under the heading Go Ethereum below. Documentation for changes and enhancements added by Shyft is detailed under the section Shyft Notes below.
+go-empyrean is based on a fork of go-ethereum. Much of the functionality and process for starting go-empyrean is the same as that for a regular ethereum node - as reflected in the notes detailed under the heading Go Ethereum below. Documentation for changes added by Shyft is detailed below.
 
-## SHYFT NOTES
+## Shyft Documentation
 
 https://shyftnetwork.github.io/go-empyrean/#setup
 
-#### Tag Release Command
+## Install 
 
-`gren release --tags=v0.8.2 --data-source=prs --override`
+To get a go-empyrean node ready please ensure that you have the proper installations listed below.
 
 #### Dependencies
     
@@ -40,7 +40,7 @@ export GOPATH=$HOME/go
 export PATH=$PATH:$HOME/go/bin
 ```
 
-> Then go_empyrean will need to be cloned to this directory:
+> go_empyrean will need to be cloned to this directory:
 
 ```shell
 $GOPATH/src/github.com/ShyftNetwork/
@@ -54,37 +54,35 @@ To add a new dependency, run govendor fetch <import-path> , and commit the chang
 
 >GOPATH is not strictly necessary however, for govendor it is much easier to use gopath as go will look for binaries in this directory ($GOPATH/bin). To set up GOPATH, read the govendor section.
 
+## Usage 
 
-#### Running Locally
+Once the dependencies and prerequisites are installed, run
 
-To begin running locally, please ensure you have correctly installed go 1.10 and postgres (make sure postgres is running). 
-Once cloned, in a terminal window run the following command:
+    make geth
 
-Before running any CLI options ensure you run **`make geth`** in the root directory.
+or, to build the full suite of utilities:
 
-``./shyft-config/shyft-geth.sh --setup`` This sets up postgres and the shyft chain db
+    make all
+    
+Upon completion, run the below command to setup the postgres instance and shyft chainDB    
+    
+	./shyft-config/shyft-geth.sh --setup
 
-``./shyft-config/shyft-geth.sh --start`` This starts GETH
+#### Running Go-empyrean
 
-At this point you should see GETH running in the terminal and if you opened your postgres instance you should see data being populated into the tables. It might look something similiar to the image below.
+	./shyft-config/shyft-geth.sh --start
 
-To stop Geth, **`crtl+C`** in the terminal window, if you proceed with the start script mentioned above the Shyft chain will begin from the last block height, if you wish to start the chain fresh from genesis follow the below steps:
+At this point you should see geth running in the terminal and if you opened your postgres instance you should see data being populated into the tables.
 
-``./shyft-config/shyft-geth.sh --reset`` This drops postgres and chaindb data
+#### SHH/Whisper
 
-``./shyft-config/shyft-geth.sh --start`` Starts GETH
+The Shyft go-empyrean node, unlike go-ethereum starts the SHH whisper client by default. This is to facilitate broadcast messaging from the Shyft bridge to each of the mining nodes.
 
-To see transactions being submitted on the network see the sendTransactions command in the CLI section of this readme.
+To disable the whisper client a startup flag `--disablewhisper` is provided, which must be passed into the command line when starting up geth.
 
-#####SHH/Whisper
-The shyft go_empyrean node, unlike go ethereum starts the SHH whisper client by default. This is to facilitate broadcast messaging from the shyft js bridge to each of the mining nodes.
 
-To disable the whisper client a startup flag --disablewhisper is provided, which must be passed into the command line when starting up geth.
+	geth --disablewhisper
 
-```
-geth --disablewhisper
-
-```
 
 To overwrite the default whisper variables, the following flags are also provided:
 
@@ -112,36 +110,24 @@ Steps for regenerating are as follows:
 It should be noted that the authentication currently relies on a smart contract boolean returning function [isValidSigner(bool)], 
 that for a given signature address returns true if the contract or contract owner has a public key matching the signature.
 
-#### Docker Images
+## Running with Docker
 
-Two sets of Docker Images are available for ShyftGeth, the Postgresql Database, and the Shyft Block Explorer, which can be used for local development and testnet connection. The development settings are included in docker-compose.yml, the testnet settings are included in docker-compose.production.yml. To launch these containers you will need to have docker-compose installed on your computer. Installation instructions for docker-compose are available [here](https://docs.docker.com/install/).
+Two sets of Docker Images are available for go-empyrean, the Postgresql Database, and the Shyft Block Explorer, which can be used for local development and testnet connection. The development settings are included in docker-compose.yml, the testnet settings are included in docker-compose.production.yml. To launch these containers you will need to have docker-compose installed on your computer. Installation instructions for docker-compose are available [here](https://docs.docker.com/install/).
 
 **To build the images for the first time please run the following command:**
 
-`./shyft-geth --setup # clears persisted directories prior to docker build`
+	./shyft-config/shyft-geth.sh --setup 
 
-`docker-compose up --build`
+	docker-compose up --build
 
 Running the above command will build Shyft Block Explorer on port `:3000` which is being served by Shyft Block Explorer API on port `:8080`. 
 These are images being pulled from docker hub which are publicly available.
 
-If you would like to reinitialize/rebuild the docker images you can run the above mentioned command as well.
+#### Docker PostgreSQL
 
-To launch ShyftGeth, PG, the ShyftBlock Explorer Api and UI anytime after initial build - issue the following commands from the root of the project directory:
-
-`./shyft-geth --setup # clears persisted directories prior to docker build`
-
-**`docker-compose up`**
-
-To stop/pause mining - enter:
-
-**`docker-compose stop`**
-
-And then just issue `docker-compose up` to continue mining.
-
-#### Docker Postgresql - DB Connection
 From your local machine you can view the database by connecting to the database in the container at 
-**``127.0.0.1:8001``**
+	
+	127.0.0.1:8001
 
 Use the following credentials: 
  
@@ -151,10 +137,11 @@ Use the following credentials:
   
 >``Database: 'shyftdb'``
  
-#### Docker Block Explorer Api 
+#### Docker Block Explorer API
+ 
 To access the shyftBlockExplorer open a browser and visit 
 
-**``http://localhost:3000``**
+	http://localhost:3000
 
 To rebuild any one of the services- issue the following commands:
 
@@ -165,77 +152,36 @@ Services:
    - Shyft Explorer API
    - Shyft Example Explorer UI
 
-**``
-docker-compose up -d --no-deps --build <docker compose file service name> 
-``**
+	docker-compose up -d --no-deps --build <docker compose file service name> 
 
-ie. for Shyft Block Explorer Api:
+> Shyft Block Explorer Api:
 
-**``docker-compose up -d --no-deps --build shyft_block_api``**
+	docker-compose up -d --no-deps --build shyft_block_api
 
-ie. for Shyft Block Explorer UI:
+> Shyft Block Explorer UI:
 
-**``docker-compose up -d --no-deps --build shyft_block_ui``**
+	docker-compose up -d --no-deps --build shyft_block_ui
 
-The Postgresql Database Container will persist the database data to the directory ``./pg-data`` _. So if you do want to reinitialize the database you should delete this directory as well as the blockchain data directories ``(./shyftData ./privatenet)`` prior to launching the docker containers. There is a shell script available to delete these folders to run it execute the following command:
+> Removing postgres data and chain data
 
-**``./shyft-config/shyft-cli/resetShyftGeth``**
+	./shyft-config/shyft-cli/resetShyftGeth
 
 Blockchain data is persisted to **``./ethash/.ethash and ./shyftData__``**. If you would like to reset the test blockchain you will need to delete the **``__./ethash ./shyftData & ./privatenet__``** directories.
 
 NB: The Shyft Geth docker image size is 1+ GB so make sure you have adequate space on your disk drive/
 
-_TODO_
-
-- Find better dependency management solution that pulls in c header files without manual intervention
-- Reduce size of the ShytfGeth docker container which is responsible for mining and running the blockchain
-- Adjust docker scripts and ports to facilitate sending of test transactions
-- Modify Docker scripts to facilitate hot reloading during development
-
 #### CLI
 
-Run `./shyft-geth` with one of the following flags:
+Run `./shyft-config/shyft-geth.sh` with one of the following flags:
 
-- `--setup` - Setups postgres and the shyft chain db.
-- `--start` - Starts geth.
-- `--reset` - Drops postgress and chain db, and reinstantiates both.
-- `--js [web3 filename]` - Executes web3 calls with a passed file name. If the file name is `sendTransactions.js`, `./shyft-geth --js sendTransactions`.
-                                                                                                                                                                                                                                        
-#### Chain Rollbacks
+| Command    	| Description |
+|:-------------	:|-------------|
+| **`--setup`** | Setup postgres and the shyft chain db |
+| `--start` 	| Starts geth. |
+| `--reset` 	| Drops postgres and chain DB, and reinstantiates both. |
+| `--js [web3 filename]` | Executes web3 calls with a passed file name. If the file name is `sendTransactions.js`, `./shyft-geth --js sendTransactions`. |
 
-For development and testing purposes only, until a formal messaging system has been incorporated within go-empyrean, an endpoint is available and freely accessible to trigger a chain and postgresql database rollback.
-
-To trigger a chain/pg database rollback the following command should be executed:
-
-```
-curl <node ip address>:8081/rollback_blocks/<block hashheader to rollback to>
-
-ie. curl localhost:8081/rollback_blocks/0x6c7db5b09bda0277b480aece97d2efac70838cad4fe6ae45f68410c8cd7cd640
-```
-
-## Go Ethereum
-
-Official golang implementation of the Ethereum protocol.
-
-Automated builds are available for stable releases and the unstable master branch.
-Binary archives are published at https://geth.ethereum.org/downloads/.
-
-## Building the source
-
-For prerequisites and detailed build instructions please read the
-[Installation Instructions](https://github.com/empyrean/go-ethereum/wiki/Building-Ethereum)
-on the wiki.
-
-Building geth requires both a Go (version 1.9 or later) and a C compiler.
-You can install them using your favourite package manager.
-Once the dependencies are installed, run
-
-    make geth
-
-or, to build the full suite of utilities:
-
-    make all
-
+                                                                                                                                                                                                        
 ## Executables
 
 The go-ethereum project comes with several wrappers/executables found in the `cmd` directory.
@@ -251,71 +197,6 @@ The go-ethereum project comes with several wrappers/executables found in the `cm
 | `swarm`    | Swarm daemon and tools. This is the entrypoint for the Swarm network. `swarm --help` for command line options and subcommands. See [Swarm README](https://github.com/ShyftNetwork/go-empyrean/tree/master/swarm) for more information. |
 | `puppeth`    | a CLI wizard that aids in creating a new Ethereum network. |
 
-## Running geth
-
-Going through all the possible command line flags is out of scope here (please consult our
-[CLI Wiki page](https://github.com/empyrean/go-ethereum/wiki/Command-Line-Options)), but we've
-enumerated a few common parameter combos to get you up to speed quickly on how you can run your
-own Geth instance.
-
-### Full node on the main Ethereum network
-
-By far the most common scenario is people wanting to simply interact with the Ethereum network:
-create accounts; transfer funds; deploy and interact with contracts. For this particular use-case
-the user doesn't care about years-old historical data, so we can fast-sync quickly to the current
-state of the network. To do so:
-
-```
-$ geth console
-```
-
-This command will:
-
- * Start geth in fast sync mode (default, can be changed with the `--syncmode` flag), causing it to
-   download more data in exchange for avoiding processing the entire history of the Ethereum network,
-   which is very CPU intensive.
- * Start up Geth's built-in interactive [JavaScript console](https://github.com/ShyftNetwork/go-empyrean/wiki/JavaScript-Console),
-   (via the trailing `console` subcommand) through which you can invoke all official [`web3` methods](https://github.com/ethereum/wiki/wiki/JavaScript-API)
-   as well as Geth's own [management APIs](https://github.com/ShyftNetwork/go-empyrean/wiki/Management-APIs).
-   This tool is optional and if you leave it out you can always attach to an already running Geth instance
-   with `geth attach`.
-
-### Full node on the Ethereum test network
-
-Transitioning towards developers, if you'd like to play around with creating Ethereum contracts, you
-almost certainly would like to do that without any real money involved until you get the hang of the
-entire system. In other words, instead of attaching to the main network, you want to join the **test**
-network with your node, which is fully equivalent to the main network, but with play-Ether only.
-
-```
-$ geth --testnet console
-```
-
-The `console` subcommand have the exact same meaning as above and they are equally useful on the
-testnet too. Please see above for their explanations if you've skipped to here.
-
-Specifying the `--testnet` flag however will reconfigure your Geth instance a bit:
-
-- Instead of using the default data directory (`~/.ethereum` on Linux for example), Geth will nest
-  itself one level deeper into a `testnet` subfolder (`~/.ethereum/testnet` on Linux). Note, on OSX
-  and Linux this also means that attaching to a running testnet node requires the use of a custom
-  endpoint since `geth attach` will try to attach to a production node endpoint by default. E.g.
-  `geth attach <datadir>/testnet/geth.ipc`. Windows users are not affected by this.
-- Instead of connecting the main Ethereum network, the client will connect to the test network,
-  which uses different P2P bootnodes, different network IDs and genesis states.
-
-_Note: Although there are some internal protective measures to prevent transactions from crossing
-over between the main network and test network, you should make sure to always use separate accounts
-for play-money and real-money. Unless you manually move accounts, Geth will by default correctly
-separate the two networks and will not make any accounts available between them._
-
-### Full node on the Rinkeby test network
-
-The above test network is a cross client one based on the ethash proof-of-work consensus algorithm. As such, it has certain extra overhead and is more susceptible to reorganization attacks due to the network's low difficulty / security. Go Ethereum also supports connecting to a proof-of-authority based test network called [_Rinkeby_](https://www.rinkeby.io) (operated by members of the community). This network is lighter, more secure, but is only supported by go-ethereum.
-
-```
-$ geth --rinkeby console
-```
 
 ### Configuration
 
@@ -333,19 +214,6 @@ $ geth --your-favourite-flags dumpconfig
 
 _Note: This works only with geth v1.6.0 and above._
 
-#### Docker quick start
-
-One of the quickest ways to get Ethereum up and running on your machine is by using Docker:
-
-```
-docker run -d --name ethereum-node -v /Users/alice/ethereum:/root \
-           -p 8545:8545 -p 30303:30303 \
-           ethereum/client-go
-```
-
-This will start geth in fast-sync mode with a DB memory allowance of 1GB just as the above command does. It will also create a persistent volume in your home directory for saving your blockchain as well as map the default ports. There is also an `alpine` tag available for a slim version of the image.
-
-Do not forget `--rpcaddr 0.0.0.0`, if you want to access RPC from other containers and/or hosts. By default, `geth` binds to the local interface and RPC endpoints is not accessible from the outside.
 
 ### Programatically interfacing Geth nodes
 
@@ -383,57 +251,6 @@ on all transports. You can reuse the same connection for multiple requests!
 doing so! Hackers on the internet are actively trying to subvert Ethereum nodes with exposed APIs!
 Further, all browser tabs can access locally running webservers, so malicious webpages could try to
 subvert locally available APIs!**
-
-### Operating a private network
-
-Maintaining your own private network is more involved as a lot of configurations taken for granted in
-the official networks need to be manually set up.
-
-#### Defining the private genesis state
-
-First, you'll need to create the genesis state of your networks, which all nodes need to be aware of
-and agree upon. This consists of a small JSON file (e.g. call it `genesis.json`):
-
-```json
-{
-  "config": {
-    "chainId": 0,
-    "homesteadBlock": 0,
-    "eip155Block": 0,
-    "eip158Block": 0
-  },
-  "alloc": {},
-  "coinbase": "0x0000000000000000000000000000000000000000",
-  "difficulty": "0x20000",
-  "extraData": "",
-  "gasLimit": "0x2fefd8",
-  "nonce": "0x0000000000000042",
-  "mixhash":
-    "0x0000000000000000000000000000000000000000000000000000000000000000",
-  "parentHash":
-    "0x0000000000000000000000000000000000000000000000000000000000000000",
-  "timestamp": "0x00"
-}
-```
-
-The above fields should be fine for most purposes, although we'd recommend changing the `nonce` to
-some random value so you prevent unknown remote nodes from being able to connect to you. If you'd
-like to pre-fund some accounts for easier testing, you can populate the `alloc` field with account
-configs:
-
-```json
-"alloc": {
-  "0x0000000000000000000000000000000000000001": {"balance": "111111111"},
-  "0x0000000000000000000000000000000000000002": {"balance": "222222222"}
-}
-```
-
-With the genesis state defined in the above JSON file, you'll need to initialize **every** Geth node
-with it prior to starting it up to ensure all blockchain parameters are correctly set:
-
-```
-$ geth init path/to/genesis.json
-```
 
 #### Creating the rendezvous point
 
@@ -487,54 +304,6 @@ $ geth <usual-flags> --mine --minerthreads=1 --etherbase=0x000000000000000000000
 Which will start mining blocks and transactions on a single CPU thread, crediting all proceedings to
 the account specified by `--etherbase`. You can further tune the mining by changing the default gas
 limit blocks converge to (`--targetgaslimit`) and the price transactions are accepted at (`--gasprice`).
-
-## SHYFT NOTES
-
-#### CLI
-
-Run `./shyft-config/shyft-geth` with one of the following flags:
-
-- `--setup` - Setups postgres and the shyft chain db.
-- `--start` - Starts geth.
-- `--reset` - Drops postgress and chain db, and reinstantiates both.
-- `--js [web3 filename]` - Executes web3 calls with a passed file name. If the file name is `sendTransactions.js`, `./shyft-geth --js sendTransactions`.
-
-#### Docker Images
-
-Docker Images are available for ShyftGeth and the Postgresql Database which can be used for development and testing. To launch these containers you will need to have docker-compose installed on your computer. Installation instructions for docker-compose are available [here](https://docs.docker.com/install/).
-
-To launch ShyftGeth, PG, the ShyftBlock Explorer Api and UI - issue the following command from the root of the project directory:
-
-`docker-compose up`
-
-If you would like to reinitialize/rebuild the docker images you can issue the following command:
-
-`docker-compose up --build`
-
-To rebuild any one of the services - issue the following commands:
-
-```
-docker-compose up -d --no-deps --build <docker compose file service name> 
-
-# ie. for shyftBlockExplorerApi:
-# docker-compose up -d --no-deps --build shyft_block_api
-```
-__The Postgresql Database Container will persist the database data to a folder in the root of the project directory - pg-data" __. So if you do want to reinitialize the database you should delete this docker container prior to launching the docker containers. To delete this docker volume and have it recreated you should input the following command:
-
-```docker volume rm go-empyrean_pg-data```
-
-From your local machine you can view the database by connecting to the database in the container at 127.0.0.1:8001. To access the shyftBlockExplorer open a browser and visit http://localhost:3000
-
-__Blockchain data is persisted to ./ethash/.ethash__ and ./shyftData. If you would like to reset the test blockchain you will need to delete the ./ethash and ./shyftData directories.
-
-NB: The Shyft Geth docker image size is 1+ GB so make sure you have adequate space on your disk drive/
-
-_TODO_
-
-- Find better dependency management solution that pulls in c header files without manual intervention
-- Reduce size of the ShytfGeth docker container which is responsible for mining and running the blockchain
-- Adjust docker scripts and ports to facilitate sending of test transactions
-- Modify Docker scripts to facilitate hot reloading during development
 
 ## Contribution
 
