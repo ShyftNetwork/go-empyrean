@@ -17,6 +17,7 @@
 package simulation
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -28,6 +29,7 @@ import (
 	"github.com/ShyftNetwork/go-empyrean/p2p/enode"
 	"github.com/ShyftNetwork/go-empyrean/p2p/simulations"
 	"github.com/ShyftNetwork/go-empyrean/p2p/simulations/adapters"
+	"github.com/ShyftNetwork/go-empyrean/swarm/network"
 )
 
 // NodeIDs returns NodeIDs for all nodes in the network.
@@ -44,7 +46,7 @@ func (s *Simulation) NodeIDs() (ids []enode.ID) {
 func (s *Simulation) UpNodeIDs() (ids []enode.ID) {
 	nodes := s.Net.GetNodes()
 	for _, node := range nodes {
-		if node.Up {
+		if node.Up() {
 			ids = append(ids, node.ID())
 		}
 	}
@@ -55,7 +57,7 @@ func (s *Simulation) UpNodeIDs() (ids []enode.ID) {
 func (s *Simulation) DownNodeIDs() (ids []enode.ID) {
 	nodes := s.Net.GetNodes()
 	for _, node := range nodes {
-		if !node.Up {
+		if !node.Up() {
 			ids = append(ids, node.ID())
 		}
 	}
@@ -96,10 +98,28 @@ func (s *Simulation) AddNode(opts ...AddNodeOption) (id enode.ID, err error) {
 	if len(conf.Services) == 0 {
 		conf.Services = s.serviceNames
 	}
+
+	// add ENR records to the underlying node
+	// most importantly the bzz overlay address
+	//
+	// for now we have no way of setting bootnodes or lightnodes in sims
+	// so we just let them be set to false
+	// they should perhaps be possible to override them with AddNodeOption
+	enodeParams := &network.EnodeParams{
+		PrivateKey: conf.PrivateKey,
+	}
+	record, err := network.NewEnodeRecord(enodeParams)
+	if err != nil {
+		return enode.ID{}, err
+	}
+	conf.Record = *record
+
+	// Add the bzz address to the node config
 	node, err := s.Net.NewNodeWithConfig(conf)
 	if err != nil {
 		return id, err
 	}
+
 	return node.ID(), s.Net.Start(node.ID())
 }
 
@@ -198,47 +218,36 @@ func (s *Simulation) AddNodesAndConnectStar(count int, opts ...AddNodeOption) (i
 // UploadSnapshot uploads a snapshot to the simulation
 // This method tries to open the json file provided, applies the config to all nodes
 // and then loads the snapshot into the Simulation network
-func (s *Simulation) UploadSnapshot(snapshotFile string, opts ...AddNodeOption) error {
+func (s *Simulation) UploadSnapshot(ctx context.Context, snapshotFile string, opts ...AddNodeOption) error {
 	f, err := os.Open(snapshotFile)
 	if err != nil {
 		return err
 	}
-	defer func() {
-		err := f.Close()
-		if err != nil {
-			log.Error("Error closing snapshot file", "err", err)
-		}
-	}()
+	defer f.Close()
+
 	jsonbyte, err := ioutil.ReadAll(f)
 	if err != nil {
 		return err
 	}
 	var snap simulations.Snapshot
-	err = json.Unmarshal(jsonbyte, &snap)
-	if err != nil {
+	if err := json.Unmarshal(jsonbyte, &snap); err != nil {
 		return err
 	}
 
 	//the snapshot probably has the property EnableMsgEvents not set
-	//just in case, set it to true!
-	//(we need this to wait for messages before uploading)
-	for _, n := range snap.Nodes {
-		n.Node.Config.EnableMsgEvents = true
-		n.Node.Config.Services = s.serviceNames
+	//set it to true (we need this to wait for messages before uploading)
+	for i := range snap.Nodes {
+		snap.Nodes[i].Node.Config.EnableMsgEvents = true
+		snap.Nodes[i].Node.Config.Services = s.serviceNames
 		for _, o := range opts {
-			o(n.Node.Config)
+			o(snap.Nodes[i].Node.Config)
 		}
 	}
 
-	log.Info("Waiting for p2p connections to be established...")
-
-	//now we can load the snapshot
-	err = s.Net.Load(&snap)
-	if err != nil {
+	if err := s.Net.Load(&snap); err != nil {
 		return err
 	}
-	log.Info("Snapshot loaded")
-	return nil
+	return s.WaitTillSnapshotRecreated(ctx, &snap)
 }
 
 // StartNode starts a node by NodeID.

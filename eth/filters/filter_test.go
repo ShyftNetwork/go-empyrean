@@ -51,7 +51,7 @@ func BenchmarkFilters(b *testing.B) {
 	defer os.RemoveAll(dir)
 
 	var (
-		db, _      = ethdb.NewLDBDatabase(dir, 0, 0)
+		db, _      = rawdb.NewLevelDBDatabase(dir, 0, 0, "")
 		shyftdb, _ = ethdb.NewShyftDatabase()
 		mux        = new(event.TypeMux)
 		txFeed     = new(event.Feed)
@@ -111,7 +111,7 @@ func TestFilters(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	var (
-		db, _      = ethdb.NewLDBDatabase(dir, 0, 0)
+		db, _      = rawdb.NewLevelDBDatabase(dir, 0, 0, "")
 		shyftdb, _ = ethdb.NewShyftDatabase()
 		mux        = new(event.TypeMux)
 		txFeed     = new(event.Feed)

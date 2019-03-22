@@ -1,0 +1,66 @@
+[Eth]
+NetworkId = 2147483647
+SyncMode = "fast"
+LightPeers = 100
+DatabaseCache = 768
+Etherbase = "0xe55f57cac96fd00da6c32c353128c836a58786b0"
+MinerGasPrice = 18000000000
+EnablePreimageRecording = false
+
+[Eth.Ethash]
+CacheDir = "ethash3"
+CachesInMem = 2
+CachesOnDisk = 3
+DatasetDir = "./ethash3/.ethash3"
+DatasetsInMem = 1
+DatasetsOnDisk = 2
+PowMode = 0
+
+[Eth.TxPool]
+NoLocals = false
+Journal = "transactions.rlp"
+Rejournal = 3600000000000
+PriceLimit = 1
+PriceBump = 10
+AccountSlots = 16
+GlobalSlots = 4096
+AccountQueue = 64
+GlobalQueue = 1024
+Lifetime = 10800000000000
+
+[Eth.GPO]
+Blocks = 20
+Percentile = 60
+
+[Shh]
+MaxMessageSize = 1048576
+MinimumAcceptedPOW = 2e-01
+
+[Node]
+UserIdent = "ShyftTestnetNode"
+DataDir = "shyftData3"
+KeyStoreDir = "shyft-config/keystore"
+IPCPath = "geth.ipc"
+HTTPHost = "0.0.0.0"
+HTTPPort = 6545
+HTTPCors = ["*"]
+HTTPVirtualHosts = ["localhost"]
+HTTPModules = ["net", "web3", "eth", "shh", "miner"]
+WSPort = 6546
+WSModules = ["net", "web3", "eth", "shh"]
+WhisperSignersContract = "0xfAeCcaE8c1AF6bDFd71095E1B6a2F61C61C8a7E7"
+
+[Node.P2P]
+MaxPeers = 25
+NoDiscovery = false
+BootstrapNodes = ["enode://233610156b91ab9b6c61cd795f51e38983a7271e37e2d9bca7dd76327890eea10647526d394baed7fdc23297c6fef579220dd7b71c98cebf43bc35a08ff9fc1b@127.0.0.1:31333", "enode://5ea1fde1baf21233e042a046c21b8b20c76d37e4dbe0aaf5612783a5b246e0d2d00561b2080a6811e92441e3fd8e28d3eaf682a9722cb1e6018df68664e6aabb@127.0.0.1:31334"]
+BootstrapNodesV5 = ["enode://233610156b91ab9b6c61cd795f51e38983a7271e37e2d9bca7dd76327890eea10647526d394baed7fdc23297c6fef579220dd7b71c98cebf43bc35a08ff9fc1b@127.0.0.1:31333", "enode://5ea1fde1baf21233e042a046c21b8b20c76d37e4dbe0aaf5612783a5b246e0d2d00561b2080a6811e92441e3fd8e28d3eaf682a9722cb1e6018df68664e6aabb@127.0.0.1:31334"]
+StaticNodes = []
+TrustedNodes = []
+ListenAddr = ":31335"
+EnableMsgEvents = false
+
+[Dashboard]
+Host = "localhost"
+Port = 8080
+Refresh = 5000000000

@@ -23,6 +23,7 @@ import (
 
 	"github.com/ShyftNetwork/go-empyrean/consensus/ethash"
 	"github.com/ShyftNetwork/go-empyrean/core/types"
+	"github.com/ShyftNetwork/go-empyrean/core/rawdb"
 	"github.com/ShyftNetwork/go-empyrean/core/vm"
 	"github.com/ShyftNetwork/go-empyrean/ethdb"
 	"github.com/ShyftNetwork/go-empyrean/params"
@@ -32,7 +33,7 @@ import (
 func TestHeaderVerification(t *testing.T) {
 	// Create a simple chain to verify
 	var (
-		testdb         = ethdb.NewMemDatabase()
+		testdb         = rawdb.NewMemoryDatabase()
 		shyftTestdb, _ = ethdb.NewShyftDatabase()
 		gspec          = &Genesis{Config: params.TestChainConfig}
 		genesis        = gspec.MustCommit(testdb)
@@ -85,7 +86,7 @@ func TestHeaderConcurrentVerification32(t *testing.T) { testHeaderConcurrentVeri
 func testHeaderConcurrentVerification(t *testing.T, threads int) {
 	// Create a simple chain to verify
 	var (
-		testdb         = ethdb.NewMemDatabase()
+		testdb         = rawdb.NewMemoryDatabase()
 		shyftTestdb, _ = ethdb.NewShyftDatabase()
 		gspec          = &Genesis{Config: params.TestChainConfig}
 		genesis        = gspec.MustCommit(testdb)
@@ -158,7 +159,7 @@ func TestHeaderConcurrentAbortion32(t *testing.T) { testHeaderConcurrentAbortion
 func testHeaderConcurrentAbortion(t *testing.T, threads int) {
 	// Create a simple chain to verify
 	var (
-		testdb         = ethdb.NewMemDatabase()
+		testdb         = rawdb.NewMemoryDatabase()
 		shyftTestdb, _ = ethdb.NewShyftDatabase()
 		gspec          = &Genesis{Config: params.TestChainConfig}
 		genesis        = gspec.MustCommit(testdb)

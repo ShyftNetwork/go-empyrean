@@ -26,7 +26,7 @@ import (
 	"github.com/ShyftNetwork/go-empyrean/p2p"
 	"github.com/ShyftNetwork/go-empyrean/rlp"
 	"github.com/ShyftNetwork/go-empyrean/swarm/storage"
-	whisper "github.com/ShyftNetwork/go-empyrean/whisper/whisperv5"
+	whisper "github.com/ShyftNetwork/go-empyrean/whisper/whisperv6"
 )
 
 const (

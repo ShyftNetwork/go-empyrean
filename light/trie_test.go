@@ -24,6 +24,7 @@ import (
 
 	"github.com/ShyftNetwork/go-empyrean/consensus/ethash"
 	"github.com/ShyftNetwork/go-empyrean/core"
+	"github.com/ShyftNetwork/go-empyrean/core/rawdb"
 	"github.com/ShyftNetwork/go-empyrean/core/state"
 	"github.com/ShyftNetwork/go-empyrean/core/vm"
 	"github.com/ShyftNetwork/go-empyrean/ethdb"
@@ -34,8 +35,8 @@ import (
 
 func TestNodeIterator(t *testing.T) {
 	var (
-		fulldb     = ethdb.NewMemDatabase()
-		lightdb    = ethdb.NewMemDatabase()
+		fulldb     = rawdb.NewMemoryDatabase()
+		lightdb    = rawdb.NewMemoryDatabase()
 		shyftdb, _ = ethdb.NewShyftDatabase()
 		gspec      = core.Genesis{Alloc: core.GenesisAlloc{testBankAddress: {Balance: testBankFunds}}}
 		genesis    = gspec.MustCommit(fulldb)

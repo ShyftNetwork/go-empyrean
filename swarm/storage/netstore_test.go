@@ -29,7 +29,7 @@ import (
 
 	"github.com/ShyftNetwork/go-empyrean/common"
 	"github.com/ShyftNetwork/go-empyrean/p2p/enode"
-	ch "github.com/ShyftNetwork/go-empyrean/swarm/chunk"
+	"github.com/ShyftNetwork/go-empyrean/swarm/chunk"
 )
 
 var sourcePeerID = enode.HexID("99d8594b52298567d2ca3f4c441a5ba0140ee9245e26460d01102a52773c73b9")
@@ -43,14 +43,18 @@ type mockNetFetcher struct {
 	quit            <-chan struct{}
 	ctx             context.Context
 	hopCounts       []uint8
+	mu              sync.Mutex
 }
 
-func (m *mockNetFetcher) Offer(ctx context.Context, source *enode.ID) {
+func (m *mockNetFetcher) Offer(source *enode.ID) {
 	m.offerCalled = true
 	m.sources = append(m.sources, source)
 }
 
-func (m *mockNetFetcher) Request(ctx context.Context, hopCount uint8) {
+func (m *mockNetFetcher) Request(hopCount uint8) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	m.requestCalled = true
 	var peers []Address
 	m.peers.Range(func(key interface{}, _ interface{}) bool {
@@ -110,7 +114,7 @@ func mustNewNetStoreWithFetcher(t *testing.T) (*NetStore, *mockNetFetcher) {
 func TestNetStoreGetAndPut(t *testing.T) {
 	netStore, fetcher := mustNewNetStoreWithFetcher(t)
 
-	chunk := GenerateRandomChunk(ch.DefaultSize)
+	chunk := GenerateRandomChunk(chunk.DefaultSize)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -170,7 +174,7 @@ func TestNetStoreGetAndPut(t *testing.T) {
 func TestNetStoreGetAfterPut(t *testing.T) {
 	netStore, fetcher := mustNewNetStoreWithFetcher(t)
 
-	chunk := GenerateRandomChunk(ch.DefaultSize)
+	chunk := GenerateRandomChunk(chunk.DefaultSize)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
@@ -205,7 +209,7 @@ func TestNetStoreGetAfterPut(t *testing.T) {
 func TestNetStoreGetTimeout(t *testing.T) {
 	netStore, fetcher := mustNewNetStoreWithFetcher(t)
 
-	chunk := GenerateRandomChunk(ch.DefaultSize)
+	chunk := GenerateRandomChunk(chunk.DefaultSize)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
@@ -257,7 +261,7 @@ func TestNetStoreGetTimeout(t *testing.T) {
 func TestNetStoreGetCancel(t *testing.T) {
 	netStore, fetcher := mustNewNetStoreWithFetcher(t)
 
-	chunk := GenerateRandomChunk(ch.DefaultSize)
+	chunk := GenerateRandomChunk(chunk.DefaultSize)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 
@@ -309,7 +313,7 @@ func TestNetStoreGetCancel(t *testing.T) {
 func TestNetStoreMultipleGetAndPut(t *testing.T) {
 	netStore, fetcher := mustNewNetStoreWithFetcher(t)
 
-	chunk := GenerateRandomChunk(ch.DefaultSize)
+	chunk := GenerateRandomChunk(chunk.DefaultSize)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -383,7 +387,7 @@ func TestNetStoreMultipleGetAndPut(t *testing.T) {
 func TestNetStoreFetchFuncTimeout(t *testing.T) {
 	netStore, fetcher := mustNewNetStoreWithFetcher(t)
 
-	chunk := GenerateRandomChunk(ch.DefaultSize)
+	chunk := GenerateRandomChunk(chunk.DefaultSize)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
@@ -422,7 +426,7 @@ func TestNetStoreFetchFuncTimeout(t *testing.T) {
 func TestNetStoreFetchFuncAfterPut(t *testing.T) {
 	netStore := mustNewNetStore(t)
 
-	chunk := GenerateRandomChunk(ch.DefaultSize)
+	chunk := GenerateRandomChunk(chunk.DefaultSize)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
@@ -449,7 +453,7 @@ func TestNetStoreFetchFuncAfterPut(t *testing.T) {
 func TestNetStoreGetCallsRequest(t *testing.T) {
 	netStore, fetcher := mustNewNetStoreWithFetcher(t)
 
-	chunk := GenerateRandomChunk(ch.DefaultSize)
+	chunk := GenerateRandomChunk(chunk.DefaultSize)
 
 	ctx := context.WithValue(context.Background(), "hopcount", uint8(5))
 	ctx, cancel := context.WithTimeout(ctx, 200*time.Millisecond)
@@ -477,7 +481,7 @@ func TestNetStoreGetCallsRequest(t *testing.T) {
 func TestNetStoreGetCallsOffer(t *testing.T) {
 	netStore, fetcher := mustNewNetStoreWithFetcher(t)
 
-	chunk := GenerateRandomChunk(ch.DefaultSize)
+	chunk := GenerateRandomChunk(chunk.DefaultSize)
 
 	//  If a source peer is added to the context, NetStore will handle it as an offer
 	ctx := context.WithValue(context.Background(), "source", sourcePeerID.String())
@@ -563,7 +567,7 @@ func TestNetStoreFetcherCountPeers(t *testing.T) {
 func TestNetStoreFetchFuncCalledMultipleTimes(t *testing.T) {
 	netStore, fetcher := mustNewNetStoreWithFetcher(t)
 
-	chunk := GenerateRandomChunk(ch.DefaultSize)
+	chunk := GenerateRandomChunk(chunk.DefaultSize)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
@@ -628,7 +632,7 @@ func TestNetStoreFetchFuncCalledMultipleTimes(t *testing.T) {
 func TestNetStoreFetcherLifeCycleWithTimeout(t *testing.T) {
 	netStore, fetcher := mustNewNetStoreWithFetcher(t)
 
-	chunk := GenerateRandomChunk(ch.DefaultSize)
+	chunk := GenerateRandomChunk(chunk.DefaultSize)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()

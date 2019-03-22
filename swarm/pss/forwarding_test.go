@@ -12,7 +12,7 @@ import (
 	"github.com/ShyftNetwork/go-empyrean/p2p/protocols"
 	"github.com/ShyftNetwork/go-empyrean/swarm/network"
 	"github.com/ShyftNetwork/go-empyrean/swarm/pot"
-	whisper "github.com/ShyftNetwork/go-empyrean/whisper/whisperv5"
+	whisper "github.com/ShyftNetwork/go-empyrean/whisper/whisperv6"
 )
 
 type testCase struct {
@@ -54,6 +54,7 @@ func TestForwardBasic(t *testing.T) {
 
 	kad := network.NewKademlia(base[:], network.NewKadParams())
 	ps := createPss(t, kad)
+	defer ps.Stop()
 	addPeers(kad, peerAddresses)
 
 	const firstNearest = depth * 2 // shallowest peer in the nearest neighbours' bin

@@ -39,12 +39,16 @@ import (
 	"github.com/ShyftNetwork/go-empyrean/log"
 	"github.com/ShyftNetwork/go-empyrean/node"
 	"github.com/ShyftNetwork/go-empyrean/p2p/enode"
+	"github.com/ShyftNetwork/go-empyrean/rpc"
 	"github.com/ShyftNetwork/go-empyrean/swarm"
 	bzzapi "github.com/ShyftNetwork/go-empyrean/swarm/api"
 	swarmmetrics "github.com/ShyftNetwork/go-empyrean/swarm/metrics"
+	"github.com/ShyftNetwork/go-empyrean/swarm/storage/mock"
+	mockrpc "github.com/ShyftNetwork/go-empyrean/swarm/storage/mock/rpc"
 	"github.com/ShyftNetwork/go-empyrean/swarm/tracing"
 	sv "github.com/ShyftNetwork/go-empyrean/swarm/version"
-	"gopkg.in/urfave/cli.v1"
+
+	cli "gopkg.in/urfave/cli.v1"
 )
 
 const clientIdentifier = "swarm"
@@ -65,14 +69,15 @@ OPTIONS:
 {{end}}{{end}}
 `
 
-var (
-	gitCommit string // Git SHA1 commit hash of the release (set via linker flags)
-)
+// Git SHA1 commit hash of the release (set via linker flags)
+// this variable will be assigned if corresponding parameter is passed with install, but not with test
+// e.g.: go install -ldflags "-X main.gitCommit=ed1312d01b19e04ef578946226e5d8069d5dfd5a" ./cmd/swarm
+var gitCommit string
 
 //declare a few constant error messages, useful for later error check comparisons in test
 var (
-	SWARM_ERR_NO_BZZACCOUNT   = "bzzaccount option is required but not set; check your config file, command line or environment variables"
-	SWARM_ERR_SWAP_SET_NO_API = "SWAP is enabled but --swap-api is not set"
+	SwarmErrNoBZZAccount = "bzzaccount option is required but not set; check your config file, command line or environment variables"
+	SwarmErrSwapSetNoAPI = "SWAP is enabled but --swap-api is not set"
 )
 
 // this help command gets added to any subcommand that does not define it explicitly
@@ -88,6 +93,7 @@ var defaultNodeConfig = node.DefaultConfig
 
 // This init function sets defaults so cmd/swarm can run alongside geth.
 func init() {
+	sv.GitCommit = gitCommit
 	defaultNodeConfig.Name = clientIdentifier
 	defaultNodeConfig.Version = sv.VersionWithCommit(gitCommit)
 	defaultNodeConfig.P2P.ListenAddr = ":30399"
@@ -139,6 +145,8 @@ func init() {
 		dbCommand,
 		// See config.go
 		DumpConfigCommand,
+		// hashesCommand
+		hashesCommand,
 	}
 
 	// append a hidden help subcommand to all commands that have subcommands
@@ -153,7 +161,6 @@ func init() {
 		utils.BootnodesFlag,
 		utils.KeyStoreDirFlag,
 		utils.ListenPortFlag,
-		utils.NoDiscoverFlag,
 		utils.DiscoveryV5Flag,
 		utils.NetrestrictFlag,
 		utils.NodeKeyFileFlag,
@@ -186,10 +193,13 @@ func init() {
 		SwarmUploadDefaultPath,
 		SwarmUpFromStdinFlag,
 		SwarmUploadMimeType,
+		// bootnode mode
+		SwarmBootnodeModeFlag,
 		// storage flags
 		SwarmStorePath,
 		SwarmStoreCapacity,
 		SwarmStoreCacheCapacity,
+		SwarmGlobalStoreAPIFlag,
 	}
 	rpcFlags := []cli.Flag{
 		utils.WSEnabledFlag,
@@ -226,12 +236,17 @@ func main() {
 
 func keys(ctx *cli.Context) error {
 	privateKey := getPrivKey(ctx)
-	pub := hex.EncodeToString(crypto.FromECDSAPub(&privateKey.PublicKey))
+	pubkey := crypto.FromECDSAPub(&privateKey.PublicKey)
+	pubkeyhex := hex.EncodeToString(pubkey)
 	pubCompressed := hex.EncodeToString(crypto.CompressPubkey(&privateKey.PublicKey))
+	bzzkey := crypto.Keccak256Hash(pubkey).Hex()
+
 	if !ctx.Bool(SwarmCompressedFlag.Name) {
-		fmt.Println(fmt.Sprintf("publicKey=%s", pub))
+		fmt.Println(fmt.Sprintf("bzzkey=%s", bzzkey[2:]))
+		fmt.Println(fmt.Sprintf("publicKey=%s", pubkeyhex))
 	}
 	fmt.Println(fmt.Sprintf("publicKeyCompressed=%s", pubCompressed))
+
 	return nil
 }
 
@@ -271,14 +286,22 @@ func bzzd(ctx *cli.Context) error {
 	setSwarmBootstrapNodes(ctx, &cfg)
 	//setup the ethereum node
 	utils.SetNodeConfig(ctx, &cfg)
+
+	//disable dynamic dialing from p2p/discovery
+	cfg.P2P.NoDial = true
+
 	stack, err := node.New(&cfg)
 	if err != nil {
 		utils.Fatalf("can't create node: %v", err)
 	}
+	defer stack.Close()
 
 	//a few steps need to be done after the config phase is completed,
 	//due to overriding behavior
-	initSwarmNode(bzzconfig, stack, ctx)
+	err = initSwarmNode(bzzconfig, stack, ctx, &cfg)
+	if err != nil {
+		return err
+	}
 	//register BZZ as node.Service in the ethereum node
 	registerBzzService(bzzconfig, stack)
 	//start the node
@@ -293,6 +316,15 @@ func bzzd(ctx *cli.Context) error {
 		stack.Stop()
 	}()
 
+	// add swarm bootnodes, because swarm doesn't use p2p package's discovery discv5
+	go func() {
+		s := stack.Server()
+
+		for _, n := range cfg.P2P.BootstrapNodes {
+			s.AddPeer(n)
+		}
+	}()
+
 	stack.Wait()
 	return nil
 }
@@ -300,8 +332,18 @@ func bzzd(ctx *cli.Context) error {
 func registerBzzService(bzzconfig *bzzapi.Config, stack *node.Node) {
 	//define the swarm service boot function
 	boot := func(_ *node.ServiceContext) (node.Service, error) {
-		// In production, mockStore must be always nil.
-		return swarm.NewSwarm(bzzconfig, nil)
+		var nodeStore *mock.NodeStore
+		if bzzconfig.GlobalStoreAPI != "" {
+			// connect to global store
+			client, err := rpc.Dial(bzzconfig.GlobalStoreAPI)
+			if err != nil {
+				return nil, fmt.Errorf("global store: %v", err)
+			}
+			globalStore := mockrpc.NewGlobalStore(client)
+			// create a node store for this swarm key on global store
+			nodeStore = globalStore.NewNodeStore(common.HexToAddress(bzzconfig.BzzKey))
+		}
+		return swarm.NewSwarm(bzzconfig, nodeStore)
 	}
 	//register within the ethereum node
 	if err := stack.Register(boot); err != nil {
@@ -312,7 +354,7 @@ func registerBzzService(bzzconfig *bzzapi.Config, stack *node.Node) {
 func getAccount(bzzaccount string, ctx *cli.Context, stack *node.Node) *ecdsa.PrivateKey {
 	//an account is mandatory
 	if bzzaccount == "" {
-		utils.Fatalf(SWARM_ERR_NO_BZZACCOUNT)
+		utils.Fatalf(SwarmErrNoBZZAccount)
 	}
 	// Try to load the arg as a hex key file.
 	if key, err := crypto.LoadECDSA(bzzaccount); err == nil {
@@ -343,6 +385,8 @@ func getPrivKey(ctx *cli.Context) *ecdsa.PrivateKey {
 	if err != nil {
 		utils.Fatalf("can't create node: %v", err)
 	}
+	defer stack.Close()
+
 	return getAccount(bzzconfig.BzzAccount, ctx, stack)
 }
 
@@ -427,5 +471,5 @@ func setSwarmBootstrapNodes(ctx *cli.Context, cfg *node.Config) {
 		}
 		cfg.P2P.BootstrapNodes = append(cfg.P2P.BootstrapNodes, node)
 	}
-	log.Debug("added default swarm bootnodes", "length", len(cfg.P2P.BootstrapNodes))
+
 }

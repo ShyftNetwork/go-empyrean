@@ -25,6 +25,14 @@ case $key in
     sh ./shyft-config/shyft-cli/startShyftGeth.sh
     shift # past argument
     ;;
+    --start2)
+    sh ./shyft-config/shyft-cli/startGeth2.sh
+    shift # past argument
+    ;;
+    --start3)
+    sh ./shyft-config/shyft-cli/startGeth3.sh
+    shift # past argument
+    ;;
     --js)
     sh ./shyft-config/shyft-cli/runJs.sh ./shyft-config/shyft-cli/web3/$2.js
     shift # past argument

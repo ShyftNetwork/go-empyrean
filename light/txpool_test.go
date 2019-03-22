@@ -26,6 +26,7 @@ import (
 	"github.com/ShyftNetwork/go-empyrean/common"
 	"github.com/ShyftNetwork/go-empyrean/consensus/ethash"
 	"github.com/ShyftNetwork/go-empyrean/core"
+	"github.com/ShyftNetwork/go-empyrean/core/rawdb"
 	"github.com/ShyftNetwork/go-empyrean/core/types"
 	"github.com/ShyftNetwork/go-empyrean/core/vm"
 	"github.com/ShyftNetwork/go-empyrean/ethdb"
@@ -81,8 +82,8 @@ func TestTxPool(t *testing.T) {
 	}
 
 	var (
-		sdb        = ethdb.NewMemDatabase()
-		ldb        = ethdb.NewMemDatabase()
+		sdb        = rawdb.NewMemoryDatabase()
+		ldb        = rawdb.NewMemoryDatabase()
 		shyftdb, _ = ethdb.NewShyftDatabase()
 		gspec      = core.Genesis{Alloc: core.GenesisAlloc{testBankAddress: {Balance: testBankFunds}}}
 		genesis    = gspec.MustCommit(sdb)

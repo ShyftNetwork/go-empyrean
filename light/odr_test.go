@@ -258,8 +258,8 @@ func testChainGen(i int, block *core.BlockGen) {
 
 func testChainOdr(t *testing.T, protocol int, fn odrTestFn) {
 	var (
-		sdb        = ethdb.NewMemDatabase()
-		ldb        = ethdb.NewMemDatabase()
+		sdb        = rawdb.NewMemoryDatabase()
+		ldb        = rawdb.NewMemoryDatabase()
 		shyftdb, _ = ethdb.NewShyftDatabase()
 		gspec      = core.Genesis{Alloc: core.GenesisAlloc{testBankAddress: {Balance: testBankFunds}}}
 		genesis    = gspec.MustCommit(sdb)

@@ -22,6 +22,7 @@ import (
 
 	"github.com/ShyftNetwork/go-empyrean/consensus/ethash"
 	"github.com/ShyftNetwork/go-empyrean/core/types"
+	"github.com/ShyftNetwork/go-empyrean/core/rawdb"
 	"github.com/ShyftNetwork/go-empyrean/core/vm"
 	"github.com/ShyftNetwork/go-empyrean/crypto"
 	"github.com/ShyftNetwork/go-empyrean/ethdb"
@@ -36,7 +37,7 @@ func ExampleGenerateChain() {
 		addr1      = crypto.PubkeyToAddress(key1.PublicKey)
 		addr2      = crypto.PubkeyToAddress(key2.PublicKey)
 		addr3      = crypto.PubkeyToAddress(key3.PublicKey)
-		db         = ethdb.NewMemDatabase()
+		db         = rawdb.NewMemoryDatabase()
 		shyftdb, _ = ethdb.NewShyftDatabase()
 	)
 

@@ -50,7 +50,8 @@ import (
 	"github.com/ShyftNetwork/go-empyrean/swarm/network"
 	"github.com/ShyftNetwork/go-empyrean/swarm/pot"
 	"github.com/ShyftNetwork/go-empyrean/swarm/state"
-	whisper "github.com/ShyftNetwork/go-empyrean/whisper/whisperv5"
+	whisper "github.com/ShyftNetwork/go-empyrean/whisper/whisperv6"
+
 )
 
 var (
@@ -170,6 +171,7 @@ func TestCache(t *testing.T) {
 		t.Fatal(err)
 	}
 	ps := newTestPss(privkey, nil, nil)
+	defer ps.Stop()
 	pp := NewPssParams().WithPrivateKey(privkey)
 	data := []byte("foo")
 	datatwo := []byte("bar")
@@ -648,6 +650,7 @@ func TestMessageProcessing(t *testing.T) {
 	addr := make([]byte, 32)
 	addr[0] = 0x01
 	ps := newTestPss(privkey, network.NewKademlia(addr, network.NewKadParams()), NewPssParams())
+	defer ps.Stop()
 
 	// message should pass
 	msg := newPssMsg(&msgParams{})
@@ -780,6 +783,7 @@ func TestKeys(t *testing.T) {
 		t.Fatalf("failed to retrieve 'their' private key")
 	}
 	ps := newTestPss(ourprivkey, nil, nil)
+	defer ps.Stop()
 
 	// set up peer with mock address, mapped to mocked publicaddress and with mocked symkey
 	addr := make(PssAddress, 32)
@@ -829,6 +833,7 @@ func TestGetPublickeyEntries(t *testing.T) {
 		t.Fatal(err)
 	}
 	ps := newTestPss(privkey, nil, nil)
+	defer ps.Stop()
 
 	peeraddr := network.RandomAddr().Over()
 	topicaddr := make(map[Topic]PssAddress)
@@ -932,6 +937,7 @@ func TestPeerCapabilityMismatch(t *testing.T) {
 		Payload: &whisper.Envelope{},
 	}
 	ps := newTestPss(privkey, kad, nil)
+	defer ps.Stop()
 
 	// run the forward
 	// it is enough that it completes; trying to send to incapable peers would create segfault
@@ -950,6 +956,7 @@ func TestRawAllow(t *testing.T) {
 	baseAddr := network.RandomAddr()
 	kad := network.NewKademlia((baseAddr).Over(), network.NewKadParams())
 	ps := newTestPss(privKey, kad, nil)
+	defer ps.Stop()
 	topic := BytesToTopic([]byte{0x2a})
 
 	// create handler innards that increments every time a message hits it
@@ -1363,8 +1370,6 @@ func TestNetwork(t *testing.T) {
 // nodes/msgs/addrbytes/adaptertype
 // if adaptertype is exec uses execadapter, simadapter otherwise
 func TestNetwork2000(t *testing.T) {
-	//enableMetrics()
-
 	if !*longrunning {
 		t.Skip("run with --longrunning flag to run extensive network tests")
 	}
@@ -1375,8 +1380,6 @@ func TestNetwork2000(t *testing.T) {
 }
 
 func TestNetwork5000(t *testing.T) {
-	//enableMetrics()
-
 	if !*longrunning {
 		t.Skip("run with --longrunning flag to run extensive network tests")
 	}
@@ -1387,8 +1390,6 @@ func TestNetwork5000(t *testing.T) {
 }
 
 func TestNetwork10000(t *testing.T) {
-	//enableMetrics()
-
 	if !*longrunning {
 		t.Skip("run with --longrunning flag to run extensive network tests")
 	}
@@ -1691,6 +1692,7 @@ func benchmarkSymKeySend(b *testing.B) {
 	keys, err := wapi.NewKeyPair(ctx)
 	privkey, err := w.GetPrivateKey(keys)
 	ps := newTestPss(privkey, nil, nil)
+	defer ps.Stop()
 	msg := make([]byte, msgsize)
 	rand.Read(msg)
 	topic := BytesToTopic([]byte("foo"))
@@ -1735,6 +1737,7 @@ func benchmarkAsymKeySend(b *testing.B) {
 	keys, err := wapi.NewKeyPair(ctx)
 	privkey, err := w.GetPrivateKey(keys)
 	ps := newTestPss(privkey, nil, nil)
+	defer ps.Stop()
 	msg := make([]byte, msgsize)
 	rand.Read(msg)
 	topic := BytesToTopic([]byte("foo"))
@@ -1785,6 +1788,7 @@ func benchmarkSymkeyBruteforceChangeaddr(b *testing.B) {
 	} else {
 		ps = newTestPss(privkey, nil, nil)
 	}
+	defer ps.Stop()
 	topic := BytesToTopic([]byte("foo"))
 	for i := 0; i < int(keycount); i++ {
 		to := make(PssAddress, 32)
@@ -1868,6 +1872,7 @@ func benchmarkSymkeyBruteforceSameaddr(b *testing.B) {
 	} else {
 		ps = newTestPss(privkey, nil, nil)
 	}
+	defer ps.Stop()
 	topic := BytesToTopic([]byte("foo"))
 	for i := 0; i < int(keycount); i++ {
 		copy(addr[i], network.RandomAddr().Over())
@@ -2087,12 +2092,4 @@ func (apitest *APITest) SetSymKeys(pubkeyid string, recvsymkey []byte, sendsymke
 
 func (apitest *APITest) Clean() (int, error) {
 	return apitest.Pss.cleanKeys(), nil
-}
-
-// enableMetrics is starting InfluxDB reporter so that we collect stats when running tests locally
-func enableMetrics() {
-	metrics.Enabled = true
-	go influxdb.InfluxDBWithTags(metrics.DefaultRegistry, 1*time.Second, "http://localhost:8086", "metrics", "admin", "admin", "swarm.", map[string]string{
-		"host": "test",
-	})
 }

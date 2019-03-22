@@ -31,10 +31,11 @@ import (
 	"github.com/ShyftNetwork/go-empyrean/crypto"
 	"github.com/ShyftNetwork/go-empyrean/ethdb"
 	"github.com/ShyftNetwork/go-empyrean/params"
+	"github.com/ShyftNetwork/go-empyrean/core/rawdb"
 )
 
 var (
-	testdb         = ethdb.NewMemDatabase()
+	testdb         = rawdb.NewMemoryDatabase()
 	shyftTestdb, _ = ethdb.NewShyftDatabase()
 	testKey, _     = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 	testAddress    = crypto.PubkeyToAddress(testKey.PublicKey)
@@ -245,7 +246,7 @@ func verifyImportEvent(t *testing.T, imported chan *types.Block, arrive bool) {
 		select {
 		case <-imported:
 			t.Fatalf("import invoked")
-		case <-time.After(10 * time.Millisecond):
+		case <-time.After(20 * time.Millisecond):
 		}
 	}
 }

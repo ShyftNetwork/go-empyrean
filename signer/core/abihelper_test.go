@@ -18,12 +18,11 @@ package core
 
 import (
 	"fmt"
-	"strings"
-	"testing"
-
 	"io/ioutil"
 	"math/big"
 	"reflect"
+	"strings"
+	"testing"
 
 	"github.com/ShyftNetwork/go-empyrean/accounts/abi"
 	"github.com/ShyftNetwork/go-empyrean/common"
