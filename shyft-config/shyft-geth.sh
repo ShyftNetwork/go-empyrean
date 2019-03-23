@@ -21,8 +21,16 @@ case $key in
     sh ./shyft-config/shyft-cli/setup.sh
     shift # past argument
     ;;
+    --setup2)
+    sh ./shyft-config/shyft-cli/setup2.sh
+    shift # past argument
+    ;;
     --start)
     sh ./shyft-config/shyft-cli/startShyftGeth.sh
+    shift # past argument
+    ;;
+    --start2)
+    sh ./shyft-config/shyft-cli/startShyftGeth2.sh
     shift # past argument
     ;;
     --js)
@@ -32,6 +40,10 @@ case $key in
     ;;
     --reset)
     sh ./shyft-config/shyft-cli/resetShyftGeth.sh
+    shift # past argument
+    ;;
+    --reset2)
+    sh ./shyft-config/shyft-cli/resetShyftGeth2.sh
     shift # past argument
     ;;
     *)    # unknown option
