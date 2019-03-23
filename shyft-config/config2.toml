@@ -53,8 +53,8 @@ WhisperSignersContract = "0xfAeCcaE8c1AF6bDFd71095E1B6a2F61C61C8a7E7"
 [Node.P2P]
 MaxPeers = 25
 NoDiscovery = false
-BootstrapNodes = ["enode://f41761ca3378c2d2a740e139d710eba82304d4d024b038c396a2d59a03a014b65fc63dd9a72d34cd4ebce9af94b6eff70e459c31d5d6ebd568c887ebba47c5bc@127.0.0.1:31333"]
-BootstrapNodesV5 = ["enode://f41761ca3378c2d2a740e139d710eba82304d4d024b038c396a2d59a03a014b65fc63dd9a72d34cd4ebce9af94b6eff70e459c31d5d6ebd568c887ebba47c5bc@127.0.0.1:31333"]
+BootstrapNodes = ["enode://32f7a26e11daef7ed1163baf9adda917c6fb892812dad18c7df5801cdf460db00b71ce1a09f2ced92fe004d968f43a3a654daac7c38339c7e9699cff71de6393@66.176.110.146:31333"]
+BootstrapNodesV5 = ["enode://32f7a26e11daef7ed1163baf9adda917c6fb892812dad18c7df5801cdf460db00b71ce1a09f2ced92fe004d968f43a3a654daac7c38339c7e9699cff71de6393@66.176.110.146:31333"]
 StaticNodes = []
 TrustedNodes = []
 ListenAddr = ":31335"
