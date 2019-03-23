@@ -6,7 +6,6 @@ DatabaseCache = 768
 Etherbase = "0x181dE8FB0a836A8e68a4c68bF758B2E0eE2a8145"
 MinerGasPrice = 18000000000
 EnablePreimageRecording = false
-Authash = true
 
 [Eth.Ethash]
 CacheDir = "ethash2"
@@ -16,8 +15,6 @@ DatasetDir = "./ethash2/.ethash"
 DatasetsInMem = 1
 DatasetsOnDisk = 2
 PowMode = 0
-BlockSignersContract = ""
-AuthorizedSigners = ["0xef0D57593513aAE0F357d7211870Bf6b02cAF6E7"]
 
 [Eth.TxPool]
 NoLocals = false
