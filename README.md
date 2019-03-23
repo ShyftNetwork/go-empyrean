@@ -76,7 +76,7 @@ To stop Geth, **`crtl+C`** in the terminal window, if you proceed with the start
 
 To see transactions being submitted on the network see the sendTransactions command in the CLI section of this readme.
 
-#####SHH/Whisper
+##### SHH/Whisper
 The shyft go_empyrean node, unlike go ethereum starts the SHH whisper client by default. This is to facilitate broadcast messaging from the shyft js bridge to each of the mining nodes.
 
 To disable the whisper client a startup flag --disablewhisper is provided, which must be passed into the command line when starting up geth.
