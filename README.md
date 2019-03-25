@@ -175,7 +175,7 @@ NB: The Shyft Geth docker image size is 1+ GB so make sure you have adequate spa
 Run `./shyft-config/shyft-geth.sh` with one of the following flags:
 
 | Command    	| Description |
-|:-------------	:|-------------|
+|:-------------:|-------------|
 | **`--setup`** | Setup postgres and the shyft chain db |
 | `--start` 	| Starts geth. |
 | `--reset` 	| Drops postgres and chain DB, and reinstantiates both. |
