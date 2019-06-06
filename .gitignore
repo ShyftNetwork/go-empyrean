@@ -64,5 +64,5 @@ shyftBlockExplorerApi/vendor/*
 
 build/_workspace/*
 
-./shyft-config/keystore/
-./shyft-config/unlockPasswords.txt
+shyft-config/keystore/*
+shyft-config/unlockPasswords.txt
