@@ -6,6 +6,8 @@ if [[ $# -lt 1 ]]; then
     echo
     echo "   --setup:               Setups postgres and the shyft chain db."
     echo "   --start:               Starts geth."
+    echo "   --devmode:            Starts geth. rpc enabled."
+    echo "   --shyftdev:       Starts geth in shyft dev mode. rpc enabled. pwords required."
     echo "   --reset:               Drops postgress and chain db, and reinstantiates both."
     echo "   --js [filename]:       Executes web3 calls with a passed file name. If the file name is sendTransactions.js, $ ./shyft-geth.sh --js sendTransactions"
     echo
@@ -23,6 +25,14 @@ case $key in
     ;;
     --start)
     sh ./shyft-config/shyft-cli/startShyftGeth.sh
+    shift # past argument
+    ;;
+    --devmode)
+    sh ./shyft-config/shyft-cli/startShyftGethDev.sh
+    shift # past argument
+    ;;
+    --shyftdev)
+    sh ./shyft-config/shyft-cli/startShyftGethShyftDev.sh
     shift # past argument
     ;;
     --js)

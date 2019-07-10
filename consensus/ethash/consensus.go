@@ -43,12 +43,12 @@ var (
 	ConstantinopleBlockReward = big.NewInt(2e+18) // Block reward in wei for successfully mining a block upward from Constantinople
 	maxUncles                 = 2                 // Maximum number of uncles allowed in a single block
 	allowedFutureBlockTime    = 15 * time.Second  // Max time from current time allowed for blocks, before they're considered future blocks
-	//@note: @shyft This is the Shyft block reward numbers
-	// ShyftNetworkBlockReward    = Block reward for the shyft conduit contract.
+	//@Shyft Note: This is the Shyft block reward numbers.
+	// ShyftNetworkBlockReward = Block reward for the shyft conduit contract.
 	// ShyftMinerBlockReward      = Block reward for the miner.
-	// ShyftNetworkConduitAddress = Shyft conduit contract
-	ShyftNetworkBlockReward    *big.Int = big.NewInt(2.5e+18) // Block reward in wei for successfully mining a block, for the Shyft Network
-	ShyftMinerBlockReward      *big.Int = big.NewInt(2.5e+18) // Block reward in wei for successfully mining a block, for the Shyft Network
+	// ShyftNetworkConduitAddress = Shyft conduit contract //note: could also be structured as a variable from an "extradata" field in the genesis file, but the most minimal changes is to hardcode it here.
+	ShyftNetworkBlockReward, _    	= new (big.Int).SetString("17000000000000000000", 10) // Block reward component in wei for successfully mining a block, for the Shyft Network
+	ShyftMinerBlockReward, _			= new (big.Int).SetString("17000000000000000000", 10) // Block reward component in wei for successfully mining a block, for the miner
 	ShyftNetworkConduitAddress          = common.HexToAddress("9db76b4bbaea76dfda4552b7b9d4e9d43abc55fd")
 	// calcDifficultyConstantinople is the difficulty adjustment algorithm for Constantinople.
 	// It returns the difficulty that a new block should have when created at time given the
@@ -617,11 +617,12 @@ func accumulateRewards(config *params.ChainConfig, state *state.StateDB, header 
 	if config.IsByzantium(header.Number) {
 		blockReward = ByzantiumBlockReward
 	}
-	if config.IsShyftNetwork(header.Number) {
-		blockReward = ShyftMinerBlockReward
-	}
 	if config.IsConstantinople(header.Number) {
 		blockReward = ConstantinopleBlockReward
+	}
+	//@Shyft Note: allocate the shyft block reward for network security
+	if config.IsShyftNetwork(header.Number) {
+		blockReward = ShyftMinerBlockReward
 	}
 	// Accumulate the rewards for the miner and any included uncles
 	reward := new(big.Int).Set(blockReward)
@@ -638,6 +639,7 @@ func accumulateRewards(config *params.ChainConfig, state *state.StateDB, header 
 	}
 	state.AddBalance(header.Coinbase, reward)
 
+	//@Shyft Note: allocate the shyft block reward for network "runtime".
 	if config.IsShyftNetwork(header.Number) {
 		state.AddBalance(ShyftNetworkConduitAddress, ShyftNetworkBlockReward)
 	}
