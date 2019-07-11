@@ -10,7 +10,47 @@ go-empyrean is based on a fork of go-ethereum. Much of the functionality and pro
 
 ## SHYFT NOTES
 
+Shyft's open-source Empyrean extensions allow for a mirrored postgres database, a REST based block explorer and simple UI.
+
+This allows any node to run advanced explorer functions without relying on a centralized block explorer, while still allowing specific rpc-access for mempool submissions.
+
+See the following document for more information, setup, and REST api specifications.
+
 https://shyftnetwork.github.io/go-empyrean/#setup
+
+
+## REPOSITORY NOTES
+
+#### Staging branch
+Staging - easiest to setup for existing systems integrating standard go-ethereum blockchain setups.
+
+notes:
+postgres database, and thus block explorer etc. is disabled in this mode. 
+no requirements of postgres running on target systems.
+cpu mining flag enabled by default for local system tests.
+
+```shell
+make all
+
+./shyft-config/shyft-geth.sh --setup
+```
+
+```shell
+./shyft-config/shyft-geth.sh --start 
+```
+(or) 
+```shell
+./shyft-config/shyft-geth.sh --devmode
+```
+
+The --devmode switch enables local rcp access (for metamask or remix using http:// for example) as an easy option.
+
+#### Other Branches
+Other branches may have significant differences in default configurations (for example branches that enable postgres by default) as testing/development is being performed. The outcome should be to continually simplify the installation and management scheme of the underlying blockchain while allowing for extended features like the postgres layer to progressively become more useful.
+
+Please attempt to maintain strong seperation of subfolders and branches, using git flow-type processes as often as possible to maintain easy commit management.
+
+## PLATFORM & INSTALLATION NOTES
 
 #### Tag Release Command
 
@@ -537,6 +577,7 @@ Run `./shyft-config/shyft-geth` with one of the following flags:
 
 - `--setup` - Setups postgres and the shyft chain db.
 - `--start` - Starts geth.
+- `--startdev` - Starts geth with rpc access enabled.
 - `--reset` - Drops postgress and chain db, and reinstantiates both.
 - `--js [web3 filename]` - Executes web3 calls with a passed file name. If the file name is `sendTransactions.js`, `./shyft-geth --js sendTransactions`.
 
