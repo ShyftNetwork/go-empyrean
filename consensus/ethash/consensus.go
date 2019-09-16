@@ -46,7 +46,8 @@ var (
 	//@Shyft Note: This is the Shyft block reward numbers.
 	//
 	//
-	//								The "Shyft Token Universe"
+	//								The "Shyft Token Universe" :: The initial and total supply of Shyft Network tokens.
+	//
 	//								- The total token supply of the Shyft Network is 2,520,000,000 tokens.
 	//
 	//                              - There is a 5% inflation year over year to account for both POW mining and network "runtime" (node incentives et al.).
@@ -65,6 +66,8 @@ var (
 	//                              for the node/protocol/wallet interaction space, as well as subsidizing new features, community groups with their own
 	//								governance models, bug bounties, marketing initiatives, airdrops etc. :) This will generally point to an instance of
 	//								"ShyftConduit.sol" within the network.
+	//
+	//
 	//
 	//
 	// note: could also be structured as a variable from an "extradata" field in the genesis file, but the most minimal changes is to hardcode it here.
