@@ -46,10 +46,11 @@ var (
 	//@Shyft Note: This is the Shyft block reward numbers.
 	// ShyftNetworkBlockReward = Block reward for the shyft conduit contract.
 	// ShyftMinerBlockReward      = Block reward for the miner.
-	// ShyftNetworkConduitAddress = Shyft conduit contract //note: could also be structured as a variable from an "extradata" field in the genesis file, but the most minimal changes is to hardcode it here.
-	ShyftNetworkBlockReward, _ = new(big.Int).SetString("17000000000000000000", 10) // Block reward component in wei for successfully mining a block, for the Shyft Network
-	ShyftMinerBlockReward, _   = new(big.Int).SetString("17000000000000000000", 10) // Block reward component in wei for successfully mining a block, for the miner
-	ShyftNetworkConduitAddress = common.HexToAddress("9db76b4bbaea76dfda4552b7b9d4e9d43abc55fd")
+	// ShyftNetworkConduitAddress = Shyft conduit contract
+	// note: could also be structured as a variable from an "extradata" field in the genesis file, but the most minimal changes is to hardcode it here.
+	ShyftNetworkBlockReward_v1, _ = new(big.Int).SetString("28372243839169900000", 10) // Block reward component in wei for successfully mining a block, for the Shyft Network
+	ShyftMinerBlockReward_v1, _   = new(big.Int).SetString("28372243839169900000", 10) // Block reward component in wei for successfully mining a block, for the miner
+	ShyftNetworkConduitAddress_v1 = common.HexToAddress("9db76b4bbaea76dfda4552b7b9d4e9d43abc55fd")
 	// calcDifficultyConstantinople is the difficulty adjustment algorithm for Constantinople.
 	// It returns the difficulty that a new block should have when created at time given the
 	// parent block's time and difficulty. The calculation uses the Byzantium rules, but with
