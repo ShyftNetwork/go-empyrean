@@ -44,23 +44,27 @@ var (
 	maxUncles                 = 2                 // Maximum number of uncles allowed in a single block
 	allowedFutureBlockTime    = 15 * time.Second  // Max time from current time allowed for blocks, before they're considered future blocks
 	//@Shyft Note: This is the Shyft block reward numbers.
-	// ShyftNetworkBlockReward = Block reward for the shyft conduit contract.
-	// ShyftMinerBlockReward      = Block reward for the miner.
-	// ShyftNetworkConduitAddress = Shyft conduit contract
-	//								This contract is responsible for distributing Shyft Network tokens to the appropriate places within
-	//                              the node/protocol/wallet interaction space, and used as incentives for large partners to be able to
-	//                              be staked within the network.
+	//
 	//
 	//								The "Shyft Token Universe"
 	//								- The total token supply of the Shyft Network is 2,520,000,000 tokens.
 	//
-	//                              - There is a 5% inflation year over year to account for both POW mining and network "runtime" (node incentives et al.)
-	//								- This is a 2.5% / 2.5% split, resulting in around 28 shyft tokens released per block
+	//                              - There is a 5% inflation year over year to account for both POW mining and network "runtime" (node incentives et al.).
+	//								- This is a 2.5% / 2.5% split.
+	//								- This results in 28 shyft tokens released per block for the miners and 28 shyft tokens for the network "runtime".
 	//
 	//								- There is also a 2% inflation year over year to account for the staking model. This model effectively removes tokens
 	//								- from supply over a number of years before the sum total tokens on the market is effectively greater than without this.
 	//								- It's purpose is to incentivize new and future participants into the Shyft Network's upper layers.
 	//
+	//
+	// ShyftNetworkBlockReward = 	Block reward for the shyft conduit contract.
+	// ShyftMinerBlockReward      = Block reward for the miner.
+	// ShyftNetworkConduitAddress = Shyft conduit contract
+	//								This contract is responsible for distributing Shyft Network tokens to the appropriate places within network as incentives,
+	//                              for the node/protocol/wallet interaction space, as well as subsidizing new features, community groups with their own
+	//								governance models, bug bounties, marketing initiatives, airdrops etc. :) This will generally point to an instance of
+	//								"ShyftConduit.sol" within the network.
 	//
 	//
 	// note: could also be structured as a variable from an "extradata" field in the genesis file, but the most minimal changes is to hardcode it here.
