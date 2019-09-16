@@ -8,7 +8,7 @@
     "eip158Block": 3,
     "eip160Block": 5,
     "byzantiumBlock": 4,
-	"shyftNetworkBlock": 1,
+	"shyftNetworkBlock": 0,
     "ethash": {}
   },
   "nonce": "0x0000000000000042",

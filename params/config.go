@@ -113,7 +113,7 @@ var (
 		EIP158Block:         big.NewInt(3),
 		ByzantiumBlock:      big.NewInt(1035301),
 		ConstantinopleBlock: nil,
-		ShyftNetworkBlock:   big.NewInt(1),
+		ShyftNetworkBlock:   big.NewInt(0),
 		Ethash:              new(EthashConfig),
 	}
 	// RinkebyTrustedCheckpoint contains the light client trusted checkpoint for the Rinkeby test network.
