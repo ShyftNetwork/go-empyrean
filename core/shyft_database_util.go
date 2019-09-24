@@ -233,7 +233,7 @@ func swriteMinerRewards(db ethdb.SDatabase, block *types.Block) string {
 	}
 
 	blockHash := block.Hash().Hex()
-	totalMinerReward := totalGas.Add(totalGas, Rewards.ShyftMinerBlockReward)
+	totalMinerReward := totalGas.Add(totalGas, Rewards.ShyftMinerBlockReward_v1)
 
 	// References:
 	// https://ethereum.stackexchange.com/questions/27172/different-uncles-reward
@@ -249,13 +249,13 @@ func swriteMinerRewards(db ethdb.SDatabase, block *types.Block) string {
 	for _, uncle := range block.Uncles() {
 		uncleReward.Add(uncle.Number, big8)
 		uncleReward.Sub(uncleReward, block.Number())
-		uncleReward.Mul(uncleReward, Rewards.ShyftMinerBlockReward)
+		uncleReward.Mul(uncleReward, Rewards.ShyftMinerBlockReward_v1)
 		uncleReward.Div(uncleReward, big8)
 		uncleRewards = append(uncleRewards, uncleReward)
 		uncleAddrs = append(uncleAddrs, uncle.Coinbase.String())
 	}
 	db.UpdateMinerAccount(minerAddr, blockHash, totalMinerReward)
-	db.UpdateMinerAccount(shyftConduitAddress, blockHash, Rewards.ShyftNetworkBlockReward)
+	db.UpdateMinerAccount(shyftConduitAddress, blockHash, Rewards.ShyftNetworkBlockReward_v1)
 	var uncRewards = new(big.Int)
 	for i := 0; i < len(uncleAddrs); i++ {
 		_ = uncleRewards[i]
@@ -263,7 +263,7 @@ func swriteMinerRewards(db ethdb.SDatabase, block *types.Block) string {
 	}
 
 	fullRewardValue := new(big.Int)
-	fullRewardValue.Add(totalMinerReward, Rewards.ShyftNetworkBlockReward)
+	fullRewardValue.Add(totalMinerReward, Rewards.ShyftNetworkBlockReward_v1)
 	fullRewardValue.Add(fullRewardValue, uncRewards)
 
 	return fullRewardValue.String()
