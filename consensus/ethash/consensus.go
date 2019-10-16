@@ -636,18 +636,9 @@ var (
 // reward. The total reward consists of the static block reward and rewards for
 // included uncles. The coinbase of each uncle block is also rewarded.
 func accumulateRewards(config *params.ChainConfig, state *state.StateDB, header *types.Header, uncles []*types.Header) {
-	// Select the correct block reward based on chain progression
-	blockReward := FrontierBlockReward
-	if config.IsByzantium(header.Number) {
-		blockReward = ByzantiumBlockReward
-	}
-	if config.IsConstantinople(header.Number) {
-		blockReward = ConstantinopleBlockReward
-	}
-	//@Shyft Note: allocate the shyft block reward for network security
-	if config.IsShyftNetwork(header.Number) {
-		blockReward = ShyftMinerBlockReward_v1
-	}
+	//@Shyft Note: Use Shyft's block rewards
+	blockReward := ShyftMinerBlockReward_v1
+
 	// Accumulate the rewards for the miner and any included uncles
 	reward := new(big.Int).Set(blockReward)
 	r := new(big.Int)
@@ -664,7 +655,5 @@ func accumulateRewards(config *params.ChainConfig, state *state.StateDB, header 
 	state.AddBalance(header.Coinbase, reward)
 
 	//@Shyft Note: allocate the shyft block reward for network "runtime".
-	if config.IsShyftNetwork(header.Number) {
-		state.AddBalance(ShyftNetworkConduitAddress_v1, ShyftNetworkBlockReward_v1)
-	}
+	state.AddBalance(ShyftNetworkConduitAddress_v1, ShyftNetworkBlockReward_v1)
 }
