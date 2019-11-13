@@ -50,11 +50,11 @@ var (
 	//
 	//								- The total token supply of the Shyft Network is 2,520,000,000 tokens.
 	//
-	//                              - There is a 5% inflation year over year to account for both POW mining and network "runtime" (node incentives et al.).
+	//                              - There is a 5% inflation year over year (initial supply as baseline) to account for both POW mining and network "runtime" (node incentives et al.).
 	//								- This is a 2.5% / 2.5% split.
 	//								- This results in 28 shyft tokens released per block for the miners and 28 shyft tokens for the network "runtime".
 	//
-	//								- There is also a 2% inflation year over year to account for the staking model. This model effectively removes tokens
+	//								- There is also a 2% inflation year over year (initial supply as baseline) to account for the staking model. This model effectively removes tokens
 	//								- from supply over a number of years before the sum total tokens on the market is effectively greater than without this.
 	//								- It's purpose is to incentivize new and future participants into the Shyft Network's upper layers.
 	//
