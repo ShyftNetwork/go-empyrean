@@ -59,8 +59,8 @@ var (
 	//								- It's purpose is to incentivize new and future participants into the Shyft Network's upper layers.
 	//
 	//
-	// ShyftNetworkBlockReward    = Block reward for the shyft conduit contract.
 	// ShyftMinerBlockReward      = Block reward for the miner.
+	// ShyftNetworkBlockReward    = Block reward for the shyft conduit contract.
 	// ShyftNetworkConduitAddress = Shyft conduit contract
 	//								This contract is responsible for distributing Shyft Network tokens to the appropriate places within network as incentives,
 	//                              for the node/protocol/wallet interaction space, as well as subsidizing new features, community groups with their own
@@ -71,9 +71,13 @@ var (
 	//
 	//
 	// note: could also be structured as a variable from an "extradata" field in the genesis file, but the most minimal changes is to hardcode it here.
-	ShyftNetworkBlockReward_v1, _ = new(big.Int).SetString("28000000000000000000", 10) // Block reward component in wei for successfully mining a block, for the Shyft Network
 	ShyftMinerBlockReward_v1, _   = new(big.Int).SetString("28000000000000000000", 10) // Block reward component in wei for successfully mining a block, for the miner
+	ShyftNetworkBlockReward_v1, _ = new(big.Int).SetString("28000000000000000000", 10) // Block reward component in wei for successfully mining a block, for the Shyft Network
+	ShyftBridgeSecurityBlockReward_v1, _   = new(big.Int).SetString("23000000000000000000", 10) // Block reward component in wei for the Shyft Bridge security fee
+	//[@note: this is a placeholder address before launch.]
 	ShyftNetworkConduitAddress_v1 = common.HexToAddress("9db76b4bbaea76dfda4552b7b9d4e9d43abc55fd") // Smart contract address where the output of this channel leads, for distribution throughout the network
+	//[@note: this is a placeholder address before launch.]
+	ShyftNetworkBridgeSecurityAddress_v1 = common.HexToAddress("9db76b4bbaea76dfda4552b7b9d4e9d43abc55fd") // Smart contract address where the output of the Shyft Bridge security fee goes. Pointing to the Conduit at the moment
 	// calcDifficultyConstantinople is the difficulty adjustment algorithm for Constantinople.
 	// It returns the difficulty that a new block should have when created at time given the
 	// parent block's time and difficulty. The calculation uses the Byzantium rules, but with
@@ -656,4 +660,7 @@ func accumulateRewards(config *params.ChainConfig, state *state.StateDB, header 
 
 	//@Shyft Note: allocate the shyft block reward for network "runtime".
 	state.AddBalance(ShyftNetworkConduitAddress_v1, ShyftNetworkBlockReward_v1)
+	//@Shyft Note: allocate the shyft block reward for the shyft bridge security fee.
+	state.AddBalance(ShyftNetworkBridgeSecurityAddress_v1, ShyftBridgeSecurityBlockReward_v1)
+
 }
