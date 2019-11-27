@@ -130,7 +130,7 @@ func newAlethGenesisSpec(network string, genesis *core.Genesis) (*alethGenesisSp
 	spec.Params.DifficultyBoundDivisor = (*math2.HexOrDecimal256)(params.DifficultyBoundDivisor)
 	spec.Params.GasLimitBoundDivisor = (math2.HexOrDecimal64)(params.GasLimitBoundDivisor)
 	spec.Params.DurationLimit = (*math2.HexOrDecimal256)(params.DurationLimit)
-	spec.Params.BlockReward = (*hexutil.Big)(ethash.FrontierBlockReward)
+	spec.Params.BlockReward = (*hexutil.Big)(ethash.ShyftMinerBlockReward_v1)
 
 	spec.Genesis.Nonce = (hexutil.Bytes)(make([]byte, 8))
 	binary.LittleEndian.PutUint64(spec.Genesis.Nonce[:], genesis.Nonce)
@@ -323,7 +323,7 @@ func newParityChainSpec(network string, genesis *core.Genesis, bootnodes []strin
 	spec.Engine.Ethash.Params.MinimumDifficulty = (*hexutil.Big)(params.MinimumDifficulty)
 	spec.Engine.Ethash.Params.DifficultyBoundDivisor = (*hexutil.Big)(params.DifficultyBoundDivisor)
 	spec.Engine.Ethash.Params.DurationLimit = (*hexutil.Big)(params.DurationLimit)
-	spec.Engine.Ethash.Params.BlockReward["0x0"] = hexutil.EncodeBig(ethash.FrontierBlockReward)
+	spec.Engine.Ethash.Params.BlockReward["0x0"] = hexutil.EncodeBig(ethash.ShyftMinerBlockReward_v1)
 
 	// Homestead
 	spec.Engine.Ethash.Params.HomesteadTransition = hexutil.Uint64(genesis.Config.HomesteadBlock.Uint64())
