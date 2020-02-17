@@ -358,6 +358,8 @@ type nodeInfo struct {
 	OsVer    string `json:"os_v"`
 	Client   string `json:"client"`
 	History  bool   `json:"canUpdateHistory"`
+	WalletAPI_IP  string `json:"WalletAPI_IP"`
+	WalletAPI_Port   string `json:"WalletAPI_Port"`
 }
 
 // authMsg is the authentication infos needed to login to a monitoring server.
@@ -393,6 +395,8 @@ func (s *Service) login(conn *websocket.Conn) error {
 			OsVer:    runtime.GOARCH,
 			Client:   "0.1.1",
 			History:  true,
+			WalletAPI_IP  string `json:"11.22.33.44"`,
+            WalletAPI_Port   string `json:"88889999"`
 		},
 		Secret: s.pass,
 	}
