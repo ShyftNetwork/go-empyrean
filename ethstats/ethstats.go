@@ -30,6 +30,8 @@ import (
 	"strings"
 	"time"
 
+    "os"
+
 	"github.com/ShyftNetwork/go-empyrean/common"
 	"github.com/ShyftNetwork/go-empyrean/common/mclock"
 	"github.com/ShyftNetwork/go-empyrean/consensus"
@@ -345,8 +347,9 @@ func (s *Service) readLoop(conn *websocket.Conn) {
 	}
 }
 
-// nodeInfo is the collection of metainformation about a node that is displayed
+// nodeInfo is the collectionGenesis of metainformation about a node that is displayed
 // on the monitoring page.
+
 type nodeInfo struct {
 	Name     string `json:"name"`
 	Node     string `json:"node"`
@@ -358,8 +361,11 @@ type nodeInfo struct {
 	OsVer    string `json:"os_v"`
 	Client   string `json:"client"`
 	History  bool   `json:"canUpdateHistory"`
-	WalletAPI_IP  string `json:"WalletAPI_IP"`
-	WalletAPI_Port   string `json:"WalletAPI_Port"`
+	WalletAPI_IP string `json:"WalletAPI_IP"`
+	WalletAPI_Port string `json:"WalletAPI_Port"`
+	IsRelayerNode	bool `json:"IsRelayer"`
+	HasBlockExplorer	bool `json:"HasBlockExplorer"`
+	HasAntiC	bool `json:"HasAntiC"`
 }
 
 // authMsg is the authentication infos needed to login to a monitoring server.
@@ -368,11 +374,45 @@ type authMsg struct {
 	Info   nodeInfo `json:"info"`
 	Secret string   `json:"secret"`
 }
-
+type WalletAPIConfig struct{
+	WalletAPI_IP    []string
+	WalletAPI_Port   []string
+    HasAntiC   []bool
+    IsRelayerNode   []bool
+    HasBlockExplorer   []bool	
+}
 // login tries to authorize the client at the remote server.
 func (s *Service) login(conn *websocket.Conn) error {
 	// Construct and send the login authentication
+
+//Start: Alex Binesh
+	file, _ := os.Open("./shyft-config/NodeInfo.json")
+	defer file.Close()
+	fmt.Println("This is the NodeInfo file:", file)
+	if file == nil {
+		fmt.Println("Error opening the NodeInfo file:", file)
+	}
+	decoder := json.NewDecoder(file)
+	WalletInfo := WalletAPIConfig{}
+	err := decoder.Decode(&WalletInfo)
+	if err != nil {
+		fmt.Println("Could not decode WalletInfo file, error:", err)
+	}
+	fmt.Println(" Wallet IP Address " + WalletInfo.WalletAPI_IP[0]) // output: [UserA, UserB]
+	fmt.Println(" Wallet Port Number " + WalletInfo.WalletAPI_Port[0]) 
+	var WAPI_IP = WalletInfo.WalletAPI_IP[0];
+	var WAPI_Port = WalletInfo.WalletAPI_Port[0];
+	var Is_Relayer = WalletInfo.IsRelayerNode[0];
+	var Has_BExp = WalletInfo.HasBlockExplorer[0];
+	var Has_AntiC = WalletInfo.HasAntiC[0];
+	fmt.Println("Is_Relayer " + strconv.FormatBool(Is_Relayer)) 
+	fmt.Println("Has_BExp " + strconv.FormatBool(Has_BExp)) 
+	fmt.Println("Has_AntiC " + strconv.FormatBool(Has_AntiC)) 
+
+//End: Alex Binesh
+
 	infos := s.server.NodeInfo()
+//	log.Info("This is the WalletAPIPort: ", infos.WalletAPIPort);
 
 	var network, protocol string
 	if info := infos.Protocols["eth"]; info != nil {
@@ -382,6 +422,7 @@ func (s *Service) login(conn *websocket.Conn) error {
 		network = fmt.Sprintf("%d", infos.Protocols["les"].(*les.NodeInfo).Network)
 		protocol = fmt.Sprintf("les/%d", les.ClientProtocolVersions[0])
 	}
+
 	auth := &authMsg{
 		ID: s.node,
 		Info: nodeInfo{
@@ -395,8 +436,12 @@ func (s *Service) login(conn *websocket.Conn) error {
 			OsVer:    runtime.GOARCH,
 			Client:   "0.1.1",
 			History:  true,
-			WalletAPI_IP  string `json:"11.22.33.44"`,
-            WalletAPI_Port   string `json:"88889999"`
+			WalletAPI_Port:	WAPI_Port,
+			WalletAPI_IP:	WAPI_IP,
+			HasAntiC:		Has_AntiC,
+			IsRelayerNode:	Is_Relayer,
+			HasBlockExplorer:	Has_BExp,
+			
 		},
 		Secret: s.pass,
 	}

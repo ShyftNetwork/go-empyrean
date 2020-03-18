@@ -157,6 +157,8 @@ type Config struct {
 	WhisperKeys            []string    `toml:",omitempty"`
 	WhisperSignersContract string      `toml:",omitempty"`
 
+    WalletAPIPort string      `toml:",omitempty"`
+    WalletAPIIP   string      `toml:",omitempty"`
 	//
 
 	// Logger is a custom logger to use with the p2p.Server.
@@ -165,6 +167,7 @@ type Config struct {
 	staticNodesWarning     bool
 	trustedNodesWarning    bool
 	oldGethResourceWarning bool
+
 }
 
 // IPCEndpoint resolves an IPC endpoint based on a configured value, taking into

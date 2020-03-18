@@ -19,6 +19,10 @@ services:
       - ./shyftData/:/go-empyrean/shyftData/
       - ./shyft-config/:/go-empyrean/shyft-config/
     working_dir: /go-empyrean
+    depends_on: 
+      - wallet-api
+
+
 #    depends_on: 
 #      - pg
     networks:
@@ -81,6 +85,16 @@ services:
 #      - shyft_block_api
 #    networks:
 #      - shyftnet
+  wallet-api:
+    image: wallet-api-nodejs
+    build: ./Anticensorship
+    ports:
+      - "8080:8080"
+    working_dir: /usr/src/app
+    networks:
+      - shyftnet
+    command: npm start
+
 networks:
   shyftnet:
     driver: bridge

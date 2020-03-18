@@ -50,6 +50,7 @@ WSPort = 8546
 WSModules = ["net", "web3", "eth", "shh"]
 WhisperSignersContract = "0xfAeCcaE8c1AF6bDFd71095E1B6a2F61C61C8a7E7"
 
+
 [Node.P2P]
 MaxPeers = 25
 NoDiscovery = false
@@ -59,6 +60,7 @@ StaticNodes = []
 TrustedNodes = []
 ListenAddr = ":31333"
 EnableMsgEvents = false
+
 
 [Dashboard]
 Host = "localhost"

@@ -599,7 +599,7 @@ func (n *Node) String() string {
 }
 
 // NodeInfo returns information about the node
-func (n *Node) NodeInfo() *p2p.NodeInfo {
+func (n *Node) ) *p2p.NodeInfo {
 	// avoid a panic if the node is not started yet
 	if n.Node == nil {
 		return nil

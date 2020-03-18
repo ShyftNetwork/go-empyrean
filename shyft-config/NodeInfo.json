@@ -1,0 +1,7 @@
+{
+    "WalletAPI_IP":    ["127.0.0.1"],
+    "WalletAPI_Port":   ["8080"],
+    "HasAntiC":   [true],
+    "IsRelayerNode":   [false],
+    "HasBlockExplorer":   [false]
+}
