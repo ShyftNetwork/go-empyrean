@@ -19,6 +19,10 @@ services:
       - ./shyftData/:/go-empyrean/shyftData/
       - ./shyft-config/:/go-empyrean/shyft-config/
     working_dir: /go-empyrean
+    depends_on: 
+      - wallet-api
+
+
 #    depends_on: 
 #      - pg
     networks:
@@ -26,7 +30,7 @@ services:
     command: >
       sh -c 'cd /go-empyrean &&
             geth --disablepg --identity "ShyftPOANode" --keystore "./keystore" --datadir "./shyftData" init "./shyft-config/benchmark.json" &&
-            geth --disablepg --config "./shyft-config/config.toml" --keystore "./keystore" --syncmode full --gcmode archive --ws --wsaddr="0.0.0.0" --wsorigins "*" --nat=any --ethstats "${ETHSTATS_NODE_NAME}:mysecret@ws://3.132.173.222:3000" --bootnodes ${BOOTNODES}'
+            geth --disablepg --config "./shyft-config/config.toml" --keystore "./keystore" --syncmode full --gcmode archive --ws --wsaddr="0.0.0.0" --wsorigins "*" --nat=any --ethstats "${ETHSTATS_NODE_NAME}:mysecret@ws://stats.shyft.network:3000" --bootnodes ${BOOTNODES}'
 
 #      sh -c '
 #    command: >
@@ -81,6 +85,16 @@ services:
 #      - shyft_block_api
 #    networks:
 #      - shyftnet
+  wallet-api:
+    image: wallet-api-nodejs
+    build: .
+    ports:
+      - "8080:8080"
+    working_dir: /usr/src/app
+    networks:
+      - shyftnet
+    command: npm start
+
 networks:
   shyftnet:
     driver: bridge
