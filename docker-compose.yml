@@ -29,8 +29,8 @@ services:
       - shyftnet
     command: >
       sh -c 'cd /go-empyrean &&
-            geth --disablepg --identity "ShyftPOANode" --keystore "./keystore" --datadir "./shyftData" init "./shyft-config/benchmark.json" &&
-            geth --disablepg --config "./shyft-config/config.toml" --keystore "./keystore" --syncmode full --gcmode archive --ws --wsaddr="0.0.0.0" --wsorigins "*" --nat=any --ethstats "${ETHSTATS_NODE_NAME}:mysecret@ws://stats.shyft.network:3000" --bootnodes ${BOOTNODES}'
+            geth --disablepg --identity "ShyftPOANode" --keystore "./shyft-config/keystore" --datadir "./shyftData" init "./shyft-config/benchmark.json" &&
+            geth --disablepg --config "./shyft-config/config.toml" --keystore "./shyft-config/keystore" --syncmode full --gcmode archive --ws --wsaddr="0.0.0.0" --wsorigins "*" --nat=any --ethstats "${ETHSTATS_NODE_NAME}:mysecret@ws://stats.shyft.network:3000" --bootnodes ${BOOTNODES}'
 
 #      sh -c '
 #    command: >
