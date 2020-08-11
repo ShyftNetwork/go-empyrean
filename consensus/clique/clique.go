@@ -65,6 +65,43 @@ var (
 
 	diffInTurn = big.NewInt(2) // Block difficulty for in-turn signatures
 	diffNoTurn = big.NewInt(1) // Block difficulty for out-of-turn signatures
+
+
+	//@Shyft Note: This is the Shyft block reward numbers.
+	//
+	//
+	//								The "Shyft Token Universe" :: The initial and total supply of Shyft Network tokens.
+	//
+	//								- The total token supply of the Shyft Network is 2,520,000,000 tokens.
+	//
+	//                              - There is a 5% inflation year over year (initial supply as baseline) to account for both POW mining and network "runtime" (node incentives et al.).
+	//								- This is a 2.5% / 2.5% split.
+	//								- This results in 28 shyft tokens released per block for the miners and 28 shyft tokens for the network "runtime".
+	//
+	//								- There is also a 2% inflation year over year (initial supply as baseline) to account for the staking model. This model effectively removes tokens
+	//								- from supply over a number of years before the sum total tokens on the market is effectively greater than without this.
+	//								- It's purpose is to incentivize new and future participants into the Shyft Network's upper layers.
+	//
+	//
+	// ShyftMinerBlockReward      = Block reward for the miner.
+	// ShyftNetworkBlockReward    = Block reward for the shyft conduit contract.
+	// ShyftNetworkConduitAddress = Shyft conduit contract
+	//								This contract is responsible for distributing Shyft Network tokens to the appropriate places within network as incentives,
+	//                              for the node/protocol/wallet interaction space, as well as subsidizing new features, community groups with their own
+	//								governance models, bug bounties, marketing initiatives, airdrops etc. :) This will generally point to an instance of
+	//								"ShyftConduit.sol" within the network.
+	//
+	//
+	//
+	//
+	// note: could also be structured as a variable from an "extradata" field in the genesis file, but the most minimal changes is to hardcode it here.
+	shyftMinerBlockRewardV1, _   = new(big.Int).SetString("28000000000000000000", 10) // Block reward component in wei for successfully mining a block, for the miner
+	shyftNetworkBlockRewardV1, _ = new(big.Int).SetString("28000000000000000000", 10) // Block reward component in wei for successfully mining a block, for the Shyft Network
+	shyftBridgeSecurityBlockRewardV1, _   = new(big.Int).SetString("23000000000000000000", 10) // Block reward component in wei for the Shyft Bridge security fee
+	//[@note: this is a placeholder address before launch.]
+	shyftNetworkConduitAddressV1 = common.HexToAddress("9db76b4bbaea76dfda4552b7b9d4e9d43abc55fd") // Smart contract address where the output of this channel leads, for distribution throughout the network
+	//[@note: this is a placeholder address before launch.]
+	shyftNetworkBridgeSecurityAddressV1 = common.HexToAddress("9db76b4bbaea76dfda4552b7b9d4e9d43abc55fd") // Smart contract address where the output of the Shyft Bridge security fee goes. Pointing to the Conduit at the moment
 )
 
 // Various error messages to mark blocks invalid. These should be private to
@@ -553,6 +590,7 @@ func (c *Clique) Prepare(chain consensus.ChainHeaderReader, header *types.Header
 // rewards given.
 func (c *Clique) Finalize(chain consensus.ChainHeaderReader, header *types.Header, state *state.StateDB, txs []*types.Transaction, uncles []*types.Header) {
 	// No block rewards in PoA, so the state remains as is and uncles are dropped
+	accumulateRewards(chain.Config(), state, header, uncles)
 	header.Root = state.IntermediateRoot(chain.Config().IsEIP158(header.Number))
 	header.UncleHash = types.CalcUncleHash(nil)
 }
@@ -561,6 +599,7 @@ func (c *Clique) Finalize(chain consensus.ChainHeaderReader, header *types.Heade
 // nor block rewards given, and returns the final block.
 func (c *Clique) FinalizeAndAssemble(chain consensus.ChainHeaderReader, header *types.Header, state *state.StateDB, txs []*types.Transaction, uncles []*types.Header, receipts []*types.Receipt) (*types.Block, error) {
 	// No block rewards in PoA, so the state remains as is and uncles are dropped
+	accumulateRewards(chain.Config(), state, header, uncles)
 	header.Root = state.IntermediateRoot(chain.Config().IsEIP158(header.Number))
 	header.UncleHash = types.CalcUncleHash(nil)
 
@@ -734,4 +773,27 @@ func encodeSigHeader(w io.Writer, header *types.Header) {
 	if err != nil {
 		panic("can't encode: " + err.Error())
 	}
+}
+
+// Some weird constants to avoid constant memory allocs for them.
+var (
+	big8  = big.NewInt(8)
+	big32 = big.NewInt(32)
+)
+
+// AccumulateRewards credits the coinbase of the given block with the mining
+// reward. The total reward consists of the static block reward and rewards for
+// included uncles. The coinbase of each uncle block is also rewarded.
+func accumulateRewards(config *params.ChainConfig, state *state.StateDB, header *types.Header, uncles []*types.Header) {
+	//@Shyft Note: Use Shyft's block rewards
+	blockReward := shyftMinerBlockRewardV1
+
+	// Accumulate the rewards for the miner, no uncles
+	reward := new(big.Int).Set(blockReward)
+	state.AddBalance(header.Coinbase, reward)
+
+	//@Shyft Note: allocate the shyft block reward for network "runtime".
+	state.AddBalance(shyftNetworkConduitAddressV1, shyftNetworkBlockRewardV1)
+	//@Shyft Note: allocate the shyft block reward for the shyft bridge security fee.
+	state.AddBalance(shyftNetworkBridgeSecurityAddressV1, shyftBridgeSecurityBlockRewardV1)
 }
